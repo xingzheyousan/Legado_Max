@@ -47,6 +47,8 @@ object PreferKey {
     const val showRss = "showRss"
     const val debugMode = "debugMode" // 调试模式开关，控制"我的"页面调试工具入口显示
     const val debugLogFloatingBall = "debugLogFloatingBall" // 调试日志悬浮球开关，控制应用内悬浮球显示
+    const val debugFloatingBallPosX = "debugFloatingBallPosX" // 调试悬浮球拖动位置 X（像素）
+    const val debugFloatingBallPosY = "debugFloatingBallPosY" // 调试悬浮球拖动位置 Y（像素）
     const val copyCrashLog = "copyCrashLog" // 崩溃时复制日志到剪贴板
     const val mdLinkInnerBrowser = "mdLinkInnerBrowser" // MD链接用内置浏览器打开
     const val bookshelfLayout = "bookshelfLayout"
@@ -256,8 +258,10 @@ object PreferKey {
     const val backupBookCache = "backupBookCache"
     const val sourceRecycleBinEnabled = "sourceRecycleBinEnabled"
 
-    /** 发现列表列数配置，默认1列，>=2为网格多列 */
+    /** 发现列表网格模式列数配置，默认2列 */
     const val exploreShowColumn = "exploreShowColumn"
-    /** 发现列表是否处于网格模式，由"切换布局"菜单控制 */
+    /** 发现列表瀑布流模式列数配置，默认2列 */
+    const val exploreShowColumnWaterfall = "exploreShowColumnWaterfall"
+    /** 发现列表布局模式，由"切换布局"菜单控制 */
     const val exploreGridMode = "exploreGridMode"
 }
