@@ -81,6 +81,22 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
     var showBoardLine = appCtx.getPrefInt(PreferKey.showBoardLine, 1)
     var adaptSpecialStyle = appCtx.getPrefBoolean(PreferKey.adaptSpecialStyle, true)
 
+    // ==================== 底栏液态玻璃效果配置 ====================
+    /** 日间模式方案包名 */
+    var activeNavigationBarDay: String
+        get() = appCtx.getPrefString(PreferKey.navigationBarPackageDay, "default")
+        set(value) { appCtx.putPrefString(PreferKey.navigationBarPackageDay, value) }
+
+    /** 夜间模式方案包名 */
+    var activeNavigationBarNight: String
+        get() = appCtx.getPrefString(PreferKey.navigationBarPackageNight, "default")
+        set(value) { appCtx.putPrefString(PreferKey.navigationBarPackageNight, value) }
+
+    /** 根据当前主题模式返回对应的方案包名 */
+    fun activeDirName(isNight: Boolean): String {
+        return if (isNight) activeNavigationBarNight else activeNavigationBarDay
+    }
+
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         when (key) {
             PreferKey.editFontScale -> editFontScale = appCtx.getPrefInt(PreferKey.editFontScale, 16)
