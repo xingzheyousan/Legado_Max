@@ -27,14 +27,19 @@
             <io.legado.app.ui.widget.image.CoverImageView
                 android:id="@+id/iv_cover"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="4dp"
+                android:layout_height="0dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
                 android:scaleType="centerCrop"
                 android:src="@drawable/image_cover_default"
                 android:transitionName="img_cover"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="UnusedAttribute,ImageContrastCheck"
-                tools:layout_editor_absoluteX="8dp" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintDimensionRatio="H,3:4"
+                app:layout_constraintVertical_bias="0.0"
+                tools:ignore="UnusedAttribute,ImageContrastCheck" />
 
             <io.legado.app.ui.widget.text.BadgeView
                 android:id="@+id/bv_unread"
@@ -63,7 +68,7 @@
             android:id="@+id/tv_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:gravity="top|center_horizontal"
             android:includeFontPadding="false"

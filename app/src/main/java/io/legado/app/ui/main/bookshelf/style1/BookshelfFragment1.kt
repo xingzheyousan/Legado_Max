@@ -24,6 +24,7 @@ import io.legado.app.data.entities.BookGroup
 import io.legado.app.databinding.FragmentBookshelf1Binding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.dialogs.selector
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.lib.theme.primaryTextColor
 import io.legado.app.ui.book.group.GroupEditDialog
@@ -33,6 +34,7 @@ import io.legado.app.ui.main.bookshelf.style1.books.BooksFragment
 import io.legado.app.utils.isCreated
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
+import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlin.collections.set
 
@@ -43,7 +45,7 @@ import kotlin.collections.set
  * 2. 下拉选择模式（下拉选择分组开关勾选）：点击标题栏弹出下拉选择分组菜单
  */
 class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1),
-    SearchView.OnQueryTextListener {
+    SearchView.OnQueryTextListener, TabLayout.OnTabSelectedListener {
 
     constructor(position: Int) : this() {
         val bundle = Bundle()
@@ -87,6 +89,8 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
         // 根据"下拉选择分组"开关动态添加布局到 TitleBar
         if (AppConfig.dropdownSelectGroup) {
             // 下拉选择模式：添加 view_group_selector 布局
+            // 清除 Toolbar 默认标题，避免和下拉栏重叠
+            binding.titleBar.toolbar.title = null
             val groupSelectorView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.view_group_selector, binding.titleBar.toolbar, false)
             binding.titleBar.toolbar.addView(groupSelectorView)
@@ -107,6 +111,8 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
             updateTitleColor()
         } else {
             // TabLayout 模式：添加 view_tab_layout_min 布局
+            // 清除 Toolbar 默认标题，避免和 TabLayout 重叠
+            binding.titleBar.toolbar.title = null
             val tabLayoutView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.view_tab_layout_min, binding.titleBar.toolbar, false)
             binding.titleBar.toolbar.addView(tabLayoutView)
@@ -255,8 +261,8 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
     // TabLayout 模式：Tab 再次选中回调（显示分组书籍数量）
     override fun onTabReselected(tab: TabLayout.Tab) {
         selectedGroup?.let { group ->
-            fragmentMap[group.groupId]?.let {
-                toastOnUi("${group.groupName}(${it.getBooksCount()})")
+            fragmentMap[group.groupId]?.let { fragment ->
+                toastOnUi("${group.groupName}(${fragment.getBooksCount()})")
             }
         }
     }
