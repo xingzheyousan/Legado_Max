@@ -65,8 +65,11 @@ import splitties.views.bottomPadding
 import kotlin.coroutines.resume
 import androidx.core.view.get
 import io.legado.app.help.update.AppUpdate
+import io.legado.app.model.NavigationBarEffectApplier
+import io.legado.app.model.NavigationBarManager
 import io.legado.app.ui.about.UpdateDialog
 import kotlin.time.Duration.Companion.hours
+
 
 /**
  * 主界面
@@ -101,6 +104,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         upBottomMenu()
         initView()
+        setupNavigationBar()
         upHomePage()
         onBackPressedDispatcher.addCallback(this) {
             if (pagePosition != 0) {
@@ -123,6 +127,12 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // 从底栏管理界面返回时重新加载配置
+        setupNavigationBar()
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -385,6 +395,25 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
         observeEvent<String>(PreferKey.threadCount) {
             viewModel.upPool()
+        }
+        // 监听底栏液态玻璃方案变更事件
+        observeEvent<Boolean>(EventBus.NAVIGATION_BAR_CHANGED) {
+            setupNavigationBar()
+        }
+    }
+
+    /**
+     * 设置底栏液态玻璃效果
+     *
+     * 根据当前主题模式加载对应的激活方案并应用效果。
+     * SOLID 模式下不添加叠加层，底栏保持原始样式。
+     */
+    private fun setupNavigationBar() {
+        val isNight = AppConfig.isNightTheme
+        val dirName = AppConfig.activeDirName(isNight)
+        val entry = NavigationBarManager.loadEntry(dirName)
+        if (entry != null) {
+            NavigationBarEffectApplier.applyEffect(entry.config, binding)
         }
     }
 

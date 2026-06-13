@@ -212,6 +212,8 @@ class ThemeConfigFragment : PreferenceFragment(),
                 putExtra("configTag", ConfigTag.COVER_CONFIG)
             }
 
+            "navigationBarManage" -> startActivity<io.legado.app.ui.main.navigationbar.NavigationBarManageActivity>()
+
             "welcomeStyle" -> startActivity<ConfigActivity> {
                 putExtra("configTag", ConfigTag.WELCOME_CONFIG)
             }

@@ -84,12 +84,12 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
     // ==================== 底栏液态玻璃效果配置 ====================
     /** 日间模式方案包名 */
     var activeNavigationBarDay: String
-        get() = appCtx.getPrefString(PreferKey.navigationBarPackageDay, "default")
+        get() = appCtx.getPrefString(PreferKey.navigationBarPackageDay, "default")!!
         set(value) { appCtx.putPrefString(PreferKey.navigationBarPackageDay, value) }
 
     /** 夜间模式方案包名 */
     var activeNavigationBarNight: String
-        get() = appCtx.getPrefString(PreferKey.navigationBarPackageNight, "default")
+        get() = appCtx.getPrefString(PreferKey.navigationBarPackageNight, "default")!!
         set(value) { appCtx.putPrefString(PreferKey.navigationBarPackageNight, value) }
 
     /** 根据当前主题模式返回对应的方案包名 */

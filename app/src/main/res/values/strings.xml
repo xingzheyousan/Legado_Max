@@ -75,6 +75,8 @@
     <string name="setting">Settings</string>
     <string name="theme_setting">Theme settings</string>
     <string name="theme_setting_s">Some settings related to interface or color</string>
+    <string name="navigation_bar_manage">Navigation Bar Manage</string>
+    <string name="navigation_bar_manage_summary">Manage navigation bar liquid glass effect schemes</string>
     <string name="other_setting">Other settings</string>
     <string name="other_setting_s">Some function-related settings</string>
     <string name="precise_manage">Precise Management</string>

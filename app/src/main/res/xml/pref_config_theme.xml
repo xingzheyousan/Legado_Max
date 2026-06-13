@@ -52,6 +52,14 @@
         app:iconSpaceReserved="false" />
 
     <io.legado.app.lib.prefs.Preference
+        android:key="navigationBarManage"
+        android:title="@string/navigation_bar_manage"
+        android:summary="@string/navigation_bar_manage_summary"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false" />
+
+    <io.legado.app.lib.prefs.Preference
         android:key="themeList"
         android:summary="@string/theme_list_summary"
         android:title="@string/theme_list"
