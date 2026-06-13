@@ -1391,8 +1391,6 @@
     <!-- 書架布局 -->
     <string name="book_view">書籍視圖</string>
     <string name="folder_view">文件夾視圖</string>
-<<<<<<< HEAD
-=======
     <!-- 列表視圖顯示更多資訊 -->
     <string name="show_more_info">顯示更多資訊</string>
     <string name="show_intro">顯示簡介</string>
@@ -1440,5 +1438,4 @@
     <string name="explore_block_rule_progress_text">已封鎖 %1$d 本</string>
     <string name="explore_block_rule_active_rules">起效的規則</string>
     <string name="explore_block_rule_active_rules_empty">當前書源無起效的規則</string>
->>>>>>> Suml-1
 </resources>

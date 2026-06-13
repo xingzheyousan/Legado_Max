@@ -4,21 +4,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-
     <io.legado.app.ui.widget.TitleBar
         android:id="@+id/title_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:attachToActivity="false"
-<<<<<<< HEAD
         app:contentLayout="@layout/view_group_selector"
-=======
->>>>>>> Suml-1
         app:title="@string/bookshelf" />
-
     <androidx.viewpager.widget.ViewPager
         android:id="@+id/view_pager_bookshelf"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-
 </LinearLayout>

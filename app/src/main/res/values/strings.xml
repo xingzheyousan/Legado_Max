@@ -1756,44 +1756,6 @@
     <string name="unknown_type">Unknown type</string>
 
     <!-- URL Record -->
-<<<<<<< HEAD
-    <string name="url_record">URL access record</string>
-    <string name="record_url_switch">Enable URL recording</string>
-    <string name="record_url_enabled">URL recording enabled</string>
-    <string name="record_url_disabled">URL recording disabled</string>
-    <string name="clear_records">Clear records</string>
-    <string name="clear_old_records">Clear old records</string>
-    <string name="clear_old_7_days">Clear records older than 7 days</string>
-    <string name="clear_old_30_days">Clear records older than 30 days</string>
-    <string name="clear_all_records">Clear all records</string>
-    <string name="search_url_record_hint">Search URL/domain/source</string>
-    <string name="filter_by_domain">Filter by domain</string>
-    
-    <!-- TTS Debug -->
-    <string name="play_audio">Play audio</string>
-    <string name="view_js_lib">View JS library</string>
-    <string name="view_result">View result</string>
-    <string name="open_editor">Open editor</string>
-    <string name="info">Info</string>
-    <string name="content_query">Content query</string>
-    <string name="switch_rule">Switch rule</string>
-    <string name="query_rule">Query rule</string>
-    <string name="copy_matched_source_urls">Copy matched source URLs</string>
-    <string name="export_matched_sources">Export matched sources</string>
-    <string name="url_source_code">URL source code</string>
-    <string name="result_source_code">Result source code</string>
-    <string name="select_rule">Select rule</string>
-    <string name="preset_rules">Preset rules</string>
-    <string name="import_rules">Import rules</string>
-    <string name="share_rules">Share rules</string>
-    <string name="export_rules">Export rules</string>
-    <string name="import_from_clipboard">Import from clipboard</string>
-    <string name="cover_gallery">Cover gallery</string>
-    <string name="cover_gallery_summary">Manage group cover gallery, can be set as global default cover source</string>
-    <string name="cronet">Cronet</string>
-<<<<<<< HEAD
-=======
-=======
     <string name="url_record">URL Access Record</string>
     <string name="record_url_switch">Enable URL Recording</string>
     <string name="record_url_enabled">URL Recording Enabled</string>
@@ -1805,23 +1767,8 @@
     <string name="clear_all_records">Clear all records</string>
     <string name="search_url_record_hint">Search URL/Domain/Source</string>
     <string name="filter_by_domain">Filter by Domain</string>
-    
+
     <!-- TTS Debug -->
-=======
-    <string name="url_record">URL Access Record</string>
-    <string name="record_url_switch">Enable URL Recording</string>
-    <string name="record_url_enabled">URL Recording Enabled</string>
-    <string name="record_url_disabled">URL Recording Disabled</string>
-    <string name="clear_records">Clear Records</string>
-    <string name="clear_old_records">Clear Old Records</string>
-    <string name="clear_old_7_days">Clear records older than 7 days</string>
-    <string name="clear_old_30_days">Clear records older than 30 days</string>
-    <string name="clear_all_records">Clear all records</string>
-    <string name="search_url_record_hint">Search URL/Domain/Source</string>
-    <string name="filter_by_domain">Filter by Domain</string>
-    
-    <!-- TTS Debug -->
->>>>>>> Suml-1
     <string name="play_audio">Play Audio</string>
     <string name="view_js_lib">View JS Library</string>
     <string name="view_result">View Result</string>
@@ -1834,10 +1781,7 @@
     <string name="export_matched_sources">Export Matched Sources</string>
     <string name="url_source_code">URL Source Code</string>
     <string name="result_source_code">Result Source Code</string>
-<<<<<<< HEAD
     <string name="preview_dict">Preview Dict</string>
-=======
->>>>>>> Suml-1
     <string name="select_rule">Select Rule</string>
     <string name="preset_rules">Preset Rules</string>
     <string name="import_rules">Import Rules</string>
@@ -1848,11 +1792,6 @@
     <!-- Cover Gallery -->
     <string name="cover_gallery">Cover Gallery</string>
     <string name="cover_gallery_summary">Manage group cover gallery, can be set as global default cover source</string>
-<<<<<<< HEAD
->>>>>>> c6f00a4b (优化中英文资源文件)
->>>>>>> babf2eb0 (feat：字典规则调试支持预览)
-=======
->>>>>>> Suml-1
 
     <!-- Read Record Screen -->
     <string name="rr_confirm_delete">Confirm Delete</string>
@@ -1952,84 +1891,17 @@
     <string name="fvd_jianguoyun_limit">Due to Jianguoyun limit on listing files, some backups may not be displayed, please clean up old backups in time</string>
     <string name="fvd_webdav_restore_error">WebDav restore error\n%s</string>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    <string name="group_name">分组名称</string>
-=======
-=======
->>>>>>> 87ecbb98 (cleanup：删除废弃的自定义帮助文档弹窗)
-=======
->>>>>>> 3580693d (fix(i18n): 修复英语strings.xml中的中文字符串翻译问题)
-=======
->>>>>>> Suml-1
     <!-- Explore Show Column Layout -->
     <string name="switch_layout">Switch Layout</string>
     <string name="select_column">Select Column(%d)</string>
     <string name="select_column_count">Select Column Count</string>
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> ae48f2af (feat(发现): 新增切换布局功能，支持1-10列网格展示)
-=======
     <string name="switch_layout_list">List</string>
     <string name="switch_layout_grid">Grid</string>
     <string name="switch_layout_waterfall">Waterfall</string>
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> 47b3bf0c (feat(发现页): 新增瀑布流布局，删除适配宽图功能)
-=======
-=======
->>>>>>> 9c42adc8 (优化中英文资源文件)
-    <!-- Custom Help Documents -->
-    <string name="add_custom_group">添加自定义分组</string>
-    <string name="add_custom_doc">添加自定义文档</string>
-    <string name="group_name">分组名称</string>
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    <string name="doc_name">文档名称</string>
-    <string name="file_format">文件格式</string>
-    <string name="add_method">添加方式</string>
-    <string name="create_new_doc">新建文档</string>
-    <string name="import_from_file">从文件导入</string>
-    <string name="group_created_success">分组创建成功</string>
-    <string name="group_created_failed">分组创建失败</string>
-    <string name="doc_added_success">文档添加成功</string>
-    <string name="doc_added_failed">文档添加失败</string>
-    <string name="invalid_group_name">分组名称不合法,不能包含特殊字符</string>
-    <string name="group_already_exists">分组已存在</string>
-    <string name="custom_doc_path_hint">将在以下位置创建文件夹:\n/sdcard/LegadoPlus/help_docs/[分组名]/</string>
-    <string name="refresh_custom_docs">刷新自定义文档</string>
-    <string name="edit_custom_doc">编辑自定义文档</string>
-    <string name="delete_custom_doc">删除自定义文档</string>
-    <string name="delete_custom_group">删除自定义分组</string>
-    <string name="confirm_delete_doc">确定要删除此文档吗?</string>
-    <string name="confirm_delete_group">确定要删除此分组及内部所有文档吗?</string>
->>>>>>> 1387cf90 (feat：增加自定义文档字符串资源)
-=======
->>>>>>> 87ecbb98 (cleanup：删除废弃的自定义帮助文档弹窗)
-=======
-=======
-=======
-=======
-    <string name="switch_layout_list">List</string>
-    <string name="switch_layout_grid">Grid</string>
-    <string name="switch_layout_waterfall">Waterfall</string>
->>>>>>> Suml-1
 
     <!-- Bookshelf Layout -->
     <string name="book_view">Book View</string>
     <string name="folder_view">Folder View</string>
-<<<<<<< HEAD
-
-    <!-- Group Management -->
-    <string name="group_name">Group Name</string>
->>>>>>> c6f00a4b (优化中英文资源文件)
->>>>>>> 9c42adc8 (优化中英文资源文件)
-
-    <string name="group_name">Group name</string>
-=======
     <!-- Show more info in list view -->
     <string name="show_more_info">Show More Info</string>
     <string name="show_intro">Show Intro</string>
@@ -2045,7 +1917,6 @@
 
     <!-- Group Management -->
     <string name="group_name">Group Name</string>
->>>>>>> Suml-1
 
     <!-- Video Player Gesture Control Settings -->
     <string name="double_tap_seek_enabled">Double tap to rewind/forward</string>
@@ -2061,9 +1932,8 @@
     <string name="quick_jump_back_b">Rewind %d minutes</string>
     <string name="quick_jump_forward_b">Forward %d minutes</string>
     <string name="quick_jump_forward_a">Forward %d minutes</string>
-<<<<<<< HEAD
->>>>>>> 6852f467 (feat(video): 增强视频播放器手势控制功能 - 双击快退/快进、快捷跳转按钮、滑动调节亮度/音量、Compose重构设置界面)
-=======
+
+    <!-- Explore Block Rule -->
     <string name="explore_block_rule">Block Rules</string>
     <string name="explore_block_rule_config">Block Rules</string>
     <string name="explore_block_rule_add">Add block rule</string>
@@ -2099,5 +1969,4 @@
     <string name="explore_block_rule_progress_text">Blocked %1$d</string>
     <string name="explore_block_rule_active_rules">Active rules</string>
     <string name="explore_block_rule_active_rules_empty">No active rules for current source</string>
->>>>>>> Suml-1
 </resources>

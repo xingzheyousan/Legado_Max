@@ -27,10 +27,7 @@ import io.legado.app.ui.widget.recycler.VerticalDivider
 import io.legado.app.utils.applyNavigationBarPadding
 import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefInt
-<<<<<<< HEAD
-=======
 import io.legado.app.utils.putPrefBoolean
->>>>>>> Suml-1
 import io.legado.app.utils.putPrefInt
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
@@ -79,8 +76,6 @@ class ExploreShowActivity : VMBaseActivity<ActivityExploreShowBinding, ExploreSh
     private var menuSelectColumn: MenuItem? = null
     /** 当前书源 URL，用于按书源隔离布局配置 */
     private val sourceUrl: String by lazy { intent.getStringExtra("sourceUrl") ?: "" }
-<<<<<<< HEAD
-=======
     /** 是否显示屏蔽进度指示器 */
     private var showBlockProgress: Boolean
         get() = getPrefBoolean(PreferKey.exploreBlockRuleShowProgress, false)
@@ -89,7 +84,6 @@ class ExploreShowActivity : VMBaseActivity<ActivityExploreShowBinding, ExploreSh
     private var blockedCount by mutableIntStateOf(0)
     /** 屏蔽进度悬浮芯片 ComposeView */
     private var blockProgressComposeView: ComposeView? = null
->>>>>>> Suml-1
     /** 上次发起加载下一页的时间戳，用于 2 秒冷却限制 */
     private var lastLoadTime = 0L
 
@@ -209,12 +203,9 @@ class ExploreShowActivity : VMBaseActivity<ActivityExploreShowBinding, ExploreSh
             R.id.menu_switch_layout -> {
                 handleSwitchLayout()
             }
-<<<<<<< HEAD
-=======
             R.id.menu_block_rule -> {
                 showBlockRuleConfig()
             }
->>>>>>> Suml-1
             R.id.menu_select_column -> {
                 handleSelectColumn()
             }
@@ -223,8 +214,6 @@ class ExploreShowActivity : VMBaseActivity<ActivityExploreShowBinding, ExploreSh
     }
 
     /**
-<<<<<<< HEAD
-=======
      * 打开屏蔽规则配置弹窗
      */
     private fun showBlockRuleConfig() {
@@ -286,7 +275,6 @@ class ExploreShowActivity : VMBaseActivity<ActivityExploreShowBinding, ExploreSh
     }
 
     /**
->>>>>>> Suml-1
      * 切换布局：列表 → 网格 → 瀑布流 三轮换
      * 网格模式下显示选择分列菜单图标和简化卡片（仅封面+书名）；
      * 瀑布流模式下显示分列菜单图标和完整信息卡片（封面+书名+作者+分类+最新章节+简介）；

@@ -319,12 +319,7 @@ abstract class BaseContentSearchDialog : BaseDialogFragment(R.layout.dialog_rule
             setPadding(dpToPx(12), dpToPx(6), dpToPx(12), dpToPx(6))
             isClickable = true
             isFocusable = true
-<<<<<<< HEAD
-            setTextColor(accentColor)
-            background = createChipBackground(true)
-=======
             tag = "__ALL__"
->>>>>>> Suml-1
         }
         allBtn.setOnClickListener {
             if (selectedTab != "__ALL__") {
@@ -352,11 +347,6 @@ abstract class BaseContentSearchDialog : BaseDialogFragment(R.layout.dialog_rule
                 isClickable = true
                 isFocusable = true
                 tag = tabKey
-<<<<<<< HEAD
-                setTextColor(accentColor)
-                background = createChipBackground(true)
-=======
->>>>>>> Suml-1
             }
             btn.setOnClickListener {
                 val key = btn.tag as String
@@ -393,17 +383,6 @@ abstract class BaseContentSearchDialog : BaseDialogFragment(R.layout.dialog_rule
                 } else {
                     child.setTextColor(ContextCompat.getColor(child.context, R.color.primaryText))
                     child.background = createChipBackground(false)
-<<<<<<< HEAD
-                }
-            } else if (child is TextView && child.tag == null && child.text == "全部") {
-                if (allSelected) {
-                    child.setTextColor(accentColor)
-                    child.background = createChipBackground(true)
-                } else {
-                    child.setTextColor(ContextCompat.getColor(child.context, R.color.primaryText))
-                    child.background = createChipBackground(false)
-=======
->>>>>>> Suml-1
                 }
             }
         }

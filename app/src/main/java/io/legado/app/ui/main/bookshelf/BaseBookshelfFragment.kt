@@ -195,14 +195,6 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
                         spGroupStyle.setSelection(AppConfig.bookGroupStyle)
                         spBookView.setSelection(bookLayout)
                         spFolderView.setSelection(folderLayout)
-<<<<<<< HEAD
-                        // 根据分组样式控制文件夹视图的可见性
-                        llFolderView.visibility = if (AppConfig.bookGroupStyle == 1) View.VISIBLE else View.GONE
-                        // 监听分组样式变化，动态更新文件夹视图的可见性
-                        spGroupStyle.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-                            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                                llFolderView.visibility = if (position == 1) View.VISIBLE else View.GONE
-=======
                         // 根据分组样式控制文件夹视图和下拉选择分组的可见性
                         llFolderView.visibility = if (AppConfig.bookGroupStyle == 1) View.VISIBLE else View.GONE
                         // 下拉选择分组开关仅在分组样式为标签（position == 0）时显示
@@ -214,7 +206,6 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
                                 llFolderView.visibility = if (position == 1) View.VISIBLE else View.GONE
                                 // 下拉选择分组开关仅在分组样式为标签（position == 0）时显示
                                 swDropdownSelectGroup.visibility = if (position == 0) View.VISIBLE else View.GONE
->>>>>>> Suml-1
                             }
                             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
                         }
@@ -222,8 +213,6 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
                         swShowLastUpdateTime.isChecked = AppConfig.showLastUpdateTime
                         swShowWaitUpBooks.isChecked = AppConfig.showWaitUpCount
                         swShowBookshelfFastScroller.isChecked = AppConfig.showBookshelfFastScroller
-<<<<<<< HEAD
-=======
                         // 初始化"显示更多信息"相关开关状态
                         llShowMoreInfo.visibility = if (bookLayout == 0) View.VISIBLE else View.GONE
                         swShowMoreInfo.isChecked = AppConfig.showMoreInfoInList
@@ -261,18 +250,14 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
                                     postEvent(EventBus.BOOKSHELF_REFRESH, "")
                                 }
                         }
->>>>>>> Suml-1
                         rgbLayout.checkByIndex(showBookname)
                         // 根据书籍视图控制书名显示选项的可见性
                         bookNameChoice.visibility = if (bookLayout > 1) View.VISIBLE else View.GONE
                         spBookView.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
                             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                                 bookNameChoice.visibility = if (position > 1) View.VISIBLE else View.GONE
-<<<<<<< HEAD
-=======
                                 // 根据书籍视图控制"显示更多信息"的可见性（仅在列表视图时显示）
                                 llShowMoreInfo.visibility = if (position == 0) View.VISIBLE else View.GONE
->>>>>>> Suml-1
                             }
                             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
                         }

@@ -55,8 +55,6 @@ object PreferKey {
     const val bookshelfSort = "bookshelfSort"
     const val folderLayout = "folderLayout"
     const val bookLayout = "bookLayout"
-<<<<<<< HEAD
-=======
     const val showMoreInfoInList = "showMoreInfoInList"
     const val showIntroInList = "showIntroInList"
     const val showTagsInList = "showTagsInList"
@@ -64,7 +62,6 @@ object PreferKey {
     const val introLinesInList = "introLinesInList"
     // 下拉选择分组开关（仅在分组样式为标签时生效）
     const val dropdownSelectGroup = "dropdownSelectGroup"
->>>>>>> Suml-1
     const val bookExportFileName = "bookExportFileName"
     const val bookImportFileName = "bookImportFileName"
     const val episodeExportFileName = "episodeExportFileName"
@@ -280,12 +277,9 @@ object PreferKey {
     const val exploreShowColumnWaterfall = "exploreShowColumnWaterfall"
     /** 发现列表布局模式，由"切换布局"菜单控制 */
     const val exploreGridMode = "exploreGridMode"
-<<<<<<< HEAD
 
     /** 底栏液态玻璃效果 - 日间模式方案包名 */
     const val navigationBarPackageDay = "navigationBarPackageDay"
     /** 底栏液态玻璃效果 - 夜间模式方案包名 */
     const val navigationBarPackageNight = "navigationBarPackageNight"
-=======
->>>>>>> Suml-1
 }

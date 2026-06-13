@@ -308,8 +308,6 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefInt(PreferKey.bookLayout, value)
         }
 
-<<<<<<< HEAD
-=======
     var showMoreInfoInList: Boolean
         get() = appCtx.getPrefBoolean(PreferKey.showMoreInfoInList, false)
         set(value) {
@@ -342,7 +340,6 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefBoolean(PreferKey.dropdownSelectGroup, value)
         }
 
->>>>>>> Suml-1
     var saveTabPosition: Int
         get() = appCtx.getPrefInt(PreferKey.saveTabPosition, 0)
         set(value) {

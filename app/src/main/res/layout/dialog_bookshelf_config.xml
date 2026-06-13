@@ -4,20 +4,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp">
-
-        <!-- 分组样式选择 -->
+        <!-- 鍒嗙粍鏍峰紡閫夋嫨 -->
         <LinearLayout
             android:id="@+id/ll_group_style"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             app:layout_constraintTop_toTopOf="parent">
-
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -26,7 +23,6 @@
                 android:text="@string/group_style"
                 android:textColor="@color/primaryText"
                 android:textSize="14sp" />
-
             <androidx.appcompat.widget.AppCompatSpinner
                 android:id="@+id/sp_group_style"
                 android:layout_width="wrap_content"
@@ -34,12 +30,8 @@
                 android:entries="@array/group_style"
                 android:theme="@style/Spinner"
                 tools:ignore="TouchTargetSizeCheck" />
-
         </LinearLayout>
-
-<<<<<<< HEAD
-=======
-        <!-- 下拉选择分组开关（仅在分组样式为标签时显示） -->
+        <!-- 涓嬫媺閫夋嫨鍒嗙粍寮€鍏筹紙浠呭湪鍒嗙粍鏍峰紡涓烘爣绛炬椂鏄剧ず锛?-->
         <io.legado.app.lib.theme.view.ThemeSwitch
             android:id="@+id/sw_dropdown_select_group"
             android:layout_width="match_parent"
@@ -49,9 +41,7 @@
             android:paddingVertical="8dp"
             android:textSize="14sp"
             app:layout_constraintTop_toBottomOf="@+id/ll_group_style" />
-
-        <!-- 文件夹视图选择（仅在分组样式为文件夹时显示） -->
->>>>>>> Suml-1
+        <!-- 鏂囦欢澶硅鍥鹃€夋嫨锛堜粎鍦ㄥ垎缁勬牱寮忎负鏂囦欢澶规椂鏄剧ず锛?-->
         <LinearLayout
             android:id="@+id/ll_folder_view"
             android:layout_width="match_parent"
@@ -59,22 +49,14 @@
             android:orientation="horizontal"
             android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@+id/ll_group_style">
-
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-<<<<<<< HEAD
-                android:padding="6dp"
-                android:text="@string/folder_view"
-                android:textColor="@color/primaryText" />
-=======
                 android:paddingVertical="8dp"
                 android:text="@string/folder_view"
                 android:textColor="@color/primaryText"
                 android:textSize="14sp" />
->>>>>>> Suml-1
-
             <androidx.appcompat.widget.AppCompatSpinner
                 android:id="@+id/sp_folder_view"
                 android:layout_width="wrap_content"
@@ -82,48 +64,30 @@
                 android:entries="@array/book_view"
                 android:theme="@style/Spinner"
                 tools:ignore="TouchTargetSizeCheck" />
-
         </LinearLayout>
-
-<<<<<<< HEAD
-=======
-        <!-- Barrier 用于处理动态可见性的布局约束 -->
+        <!-- Barrier 鐢ㄤ簬澶勭悊鍔ㄦ€佸彲瑙佹€х殑甯冨眬绾︽潫 -->
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/barrier_after_group_options"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:barrierDirection="bottom"
             app:constraint_referenced_ids="ll_group_style,sw_dropdown_select_group,ll_folder_view" />
-
-        <!-- 书籍视图选择 -->
->>>>>>> Suml-1
+        <!-- 涔︾睄瑙嗗浘閫夋嫨 -->
         <LinearLayout
             android:id="@+id/ll_book_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-<<<<<<< HEAD
-            app:layout_constraintTop_toBottomOf="@+id/ll_folder_view">
-=======
             android:layout_marginTop="12dp"
             app:layout_constraintTop_toBottomOf="@+id/barrier_after_group_options">
->>>>>>> Suml-1
-
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-<<<<<<< HEAD
-                android:padding="6dp"
-                android:text="@string/book_view"
-                android:textColor="@color/primaryText" />
-=======
                 android:paddingVertical="8dp"
                 android:text="@string/book_view"
                 android:textColor="@color/primaryText"
                 android:textSize="14sp" />
->>>>>>> Suml-1
-
             <androidx.appcompat.widget.AppCompatSpinner
                 android:id="@+id/sp_book_view"
                 android:layout_width="wrap_content"
@@ -131,12 +95,8 @@
                 android:entries="@array/book_view"
                 android:theme="@style/Spinner"
                 tools:ignore="TouchTargetSizeCheck" />
-
         </LinearLayout>
-
-<<<<<<< HEAD
-=======
-        <!-- 显示更多信息开关（仅在列表视图时显示） -->
+        <!-- 鏄剧ず鏇村淇℃伅寮€鍏筹紙浠呭湪鍒楄〃瑙嗗浘鏃舵樉绀猴級 -->
         <LinearLayout
             android:id="@+id/ll_show_more_info"
             android:layout_width="match_parent"
@@ -145,7 +105,6 @@
             android:layout_marginTop="12dp"
             android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@+id/ll_book_view">
-
             <io.legado.app.lib.theme.view.ThemeSwitch
                 android:id="@+id/sw_show_more_info"
                 android:layout_width="match_parent"
@@ -154,8 +113,7 @@
                 android:text="@string/show_more_info"
                 android:textSize="14sp"
                 tools:ignore="TouchTargetSizeCheck" />
-
-            <!-- 子菜单：显示标签 -->
+            <!-- 瀛愯彍鍗曪細鏄剧ず鏍囩 -->
             <io.legado.app.lib.theme.view.ThemeSwitch
                 android:id="@+id/sw_show_tags"
                 android:layout_width="match_parent"
@@ -166,8 +124,7 @@
                 android:textSize="14sp"
                 android:visibility="gone"
                 tools:ignore="TouchTargetSizeCheck" />
-
-            <!-- 子菜单：显示简介 -->
+            <!-- 瀛愯彍鍗曪細鏄剧ず绠€浠?-->
             <io.legado.app.lib.theme.view.ThemeSwitch
                 android:id="@+id/sw_show_intro"
                 android:layout_width="match_parent"
@@ -178,8 +135,7 @@
                 android:textSize="14sp"
                 android:visibility="gone"
                 tools:ignore="TouchTargetSizeCheck" />
-
-            <!-- 简介行数选择（仅在显示简介勾选时显示，点击弹出 NumberPicker） -->
+            <!-- 绠€浠嬭鏁伴€夋嫨锛堜粎鍦ㄦ樉绀虹畝浠嬪嬀閫夋椂鏄剧ず锛岀偣鍑诲脊鍑?NumberPicker锛?-->
             <TextView
                 android:id="@+id/tv_intro_lines"
                 android:layout_width="match_parent"
@@ -193,11 +149,8 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:background="?android:attr/selectableItemBackground" />
-
         </LinearLayout>
-
-        <!-- 显示未读数开关 -->
->>>>>>> Suml-1
+        <!-- 鏄剧ず鏈鏁板紑鍏?-->
         <io.legado.app.lib.theme.view.ThemeSwitch
             android:id="@+id/sw_show_unread"
             android:layout_width="match_parent"
@@ -205,15 +158,10 @@
             android:layout_marginTop="12dp"
             android:paddingVertical="8dp"
             android:text="@string/show_unread"
-<<<<<<< HEAD
-            app:layout_constraintTop_toBottomOf="@+id/ll_book_view"
-=======
             android:textSize="14sp"
             app:layout_constraintTop_toBottomOf="@+id/ll_show_more_info"
->>>>>>> Suml-1
             tools:ignore="TouchTargetSizeCheck" />
-
-        <!-- 显示最后更新时间开关 -->
+        <!-- 鏄剧ず鏈€鍚庢洿鏂版椂闂村紑鍏?-->
         <io.legado.app.lib.theme.view.ThemeSwitch
             android:id="@+id/sw_show_last_update_time"
             android:layout_width="match_parent"
@@ -223,8 +171,7 @@
             android:textSize="14sp"
             app:layout_constraintTop_toBottomOf="@+id/sw_show_unread"
             tools:ignore="TouchTargetSizeCheck" />
-
-        <!-- 显示等待更新书籍数开关 -->
+        <!-- 鏄剧ず绛夊緟鏇存柊涔︾睄鏁板紑鍏?-->
         <io.legado.app.lib.theme.view.ThemeSwitch
             android:id="@+id/sw_show_wait_up_books"
             android:layout_width="match_parent"
@@ -234,8 +181,7 @@
             android:textSize="14sp"
             app:layout_constraintTop_toBottomOf="@+id/sw_show_last_update_time"
             tools:ignore="TouchTargetSizeCheck" />
-
-        <!-- 显示快速滚动条开关 -->
+        <!-- 鏄剧ず蹇€熸粴鍔ㄦ潯寮€鍏?-->
         <io.legado.app.lib.theme.view.ThemeSwitch
             android:id="@+id/sw_show_bookshelf_fast_scroller"
             android:layout_width="match_parent"
@@ -245,35 +191,25 @@
             android:textSize="14sp"
             app:layout_constraintTop_toBottomOf="@+id/sw_show_wait_up_books"
             tools:ignore="TouchTargetSizeCheck" />
-
-<<<<<<< HEAD
-=======
-        <!-- 排序选项 -->
->>>>>>> Suml-1
+        <!-- 鎺掑簭閫夐」 -->
         <LinearLayout
             android:id="@+id/ll_sort"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-<<<<<<< HEAD
-=======
             android:layout_marginTop="12dp"
->>>>>>> Suml-1
             app:layout_constraintTop_toBottomOf="@id/sw_show_bookshelf_fast_scroller">
-
             <io.legado.app.ui.widget.text.AccentTextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:paddingVertical="8dp"
                 android:text="@string/sort"
                 android:textSize="14sp" />
-
             <RadioGroup
                 android:id="@+id/rg_sort"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
-
                 <RadioButton
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -281,7 +217,6 @@
                     android:text="@string/bookshelf_px_0"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
-
                 <RadioButton
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -289,7 +224,6 @@
                     android:text="@string/bookshelf_px_1"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
-
                 <RadioButton
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -297,7 +231,6 @@
                     android:text="@string/bookshelf_px_2"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
-
                 <RadioButton
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -305,7 +238,6 @@
                     android:text="@string/bookshelf_px_3"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
-
                 <RadioButton
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -313,7 +245,6 @@
                     android:text="@string/bookshelf_px_4"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
-
                 <RadioButton
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -321,36 +252,27 @@
                     android:text="@string/bookshelf_px_5"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
-
             </RadioGroup>
-
         </LinearLayout>
-
-        <!-- 书名显示选项 -->
+        <!-- 涔﹀悕鏄剧ず閫夐」 -->
         <LinearLayout
             android:id="@+id/book_name_choice"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-<<<<<<< HEAD
-=======
             android:layout_marginTop="12dp"
->>>>>>> Suml-1
             app:layout_constraintTop_toBottomOf="@+id/ll_sort">
-
             <io.legado.app.ui.widget.text.AccentTextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:paddingVertical="8dp"
                 android:text="@string/book_name"
                 android:textSize="14sp" />
-
             <RadioGroup
                 android:id="@+id/rgb_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -359,7 +281,6 @@
                     android:text="@string/show"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
-
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -368,7 +289,6 @@
                     android:text="@string/hide"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
-
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -377,11 +297,9 @@
                     android:text="@string/overlay"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
-
             </RadioGroup>
         </LinearLayout>
-
-        <!-- 间距设置 -->
+        <!-- 闂磋窛璁剧疆 -->
         <io.legado.app.ui.widget.DetailSeekBar
             android:id="@+id/margin"
             android:layout_width="match_parent"
@@ -392,6 +310,5 @@
             app:layout_constraintTop_toBottomOf="@+id/book_name_choice"
             app:max="60"
             app:title="@string/margin" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>
