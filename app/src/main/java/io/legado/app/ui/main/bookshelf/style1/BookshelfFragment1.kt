@@ -89,8 +89,6 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
         // 根据"下拉选择分组"开关动态添加布局到 TitleBar
         if (AppConfig.dropdownSelectGroup) {
             // 下拉选择模式：添加 view_group_selector 布局
-            // 清除 Toolbar 默认标题，避免和下拉栏重叠
-            binding.titleBar.toolbar.title = null
             val groupSelectorView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.view_group_selector, binding.titleBar.toolbar, false)
             binding.titleBar.toolbar.addView(groupSelectorView)
@@ -111,8 +109,6 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
             updateTitleColor()
         } else {
             // TabLayout 模式：添加 view_tab_layout_min 布局
-            // 清除 Toolbar 默认标题，避免和 TabLayout 重叠
-            binding.titleBar.toolbar.title = null
             val tabLayoutView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.view_tab_layout_min, binding.titleBar.toolbar, false)
             binding.titleBar.toolbar.addView(tabLayoutView)
