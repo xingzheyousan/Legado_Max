@@ -5,6 +5,7 @@ package io.legado.app.ui.main
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.MenuItem
+import android.view.View
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.viewModels
@@ -45,6 +46,7 @@ import io.legado.app.ui.main.my.MyFragment
 import io.legado.app.ui.main.rss.RssFragment
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.ui.widget.text.BadgeView
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.isCreated
 import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.observeEvent
@@ -216,22 +218,38 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             bottomNavigationView.setBackgroundResource(R.drawable.bg_eink_border_top)
         }
         // ThemeBottomNavigationVIew 在 init 中清除了 WindowInsetsListener，
-        // 重新设置使其为底栏添加导航栏高度的 bottomPadding，避免被系统手势条遮挡。
-        // 小米 MIUI/HyperOS 在手势导航模式下 WindowInsets 可能存在时序问题，
-        // 添加 post 延迟校验确保 bottomPadding 最终正确。
+        // 重新设置使其为底栏添加适度的 bottomPadding。
+        //
+        // 手势条高度在各品牌设备上差异显著（小米可能为 0，华为/vivo 等 48-96px），
+        // 若直接使用全量高度作 padding 会导致图标离底部过远。
+        // 此处取手势条高度的 50% 并限制在 8dp-20dp 范围内：
+        //   - 手势条 ~24dp 的设备 → padding ≈ 12dp（图标紧凑且不重叠）
+        //   - 手势条缺失的设备（小米）→ 兜底 8dp（贴近底部但不压线）
+        //   - 按键导航设备 → 50% 通常落入上限内，保持一致间距
         bottomNavigationView.setOnApplyWindowInsetsListenerCompat { view, windowInsets ->
-            val height = windowInsets.navigationBarHeight
-            view.bottomPadding = height
-            // 延迟校验：小米等定制 ROM 上 WindowInsets 可能存在时序问题
-            view.post {
-                val fallback = view.context.navigationBarHeight
-                if (fallback > 0 && view.bottomPadding < fallback) {
-                    view.bottomPadding = fallback
-                    view.requestLayout()
-                }
-            }
-            windowInsets.inset(0, 0, 0, height)
+            val rawHeight = windowInsets.navigationBarHeight
+            view.bottomPadding = computeBottomPadding(rawHeight, view)
+            windowInsets.inset(0, 0, 0, view.bottomPadding)
         }
+    }
+
+    /**
+     * 计算底栏底部内边距，使图标在各品牌设备上保持紧凑且一致的间距。
+     *
+     * @param rawHeight WindowInsets 报告的手势条高度（px），小米等设备可能为 0
+     * @param view      用于兜底获取 context 资源维度
+     * @return 底部内边距（px），范围 8dp-20dp
+     */
+    private fun computeBottomPadding(rawHeight: Int, view: View): Int {
+        val minPad = 8.dpToPx()
+        val maxPad = 20.dpToPx()
+        if (rawHeight > 0) {
+            return (rawHeight / 2).coerceIn(minPad, maxPad)
+        }
+        // 小米 MIUI/HyperOS 手势导航下 WindowInsets 可能返回 0，
+        // 使用 context 资源维度兜底，同样按 50% 缩放并限制范围
+        val fallback = view.context.navigationBarHeight
+        return if (fallback > 0) (fallback / 2).coerceIn(minPad, maxPad) else minPad
     }
 
     /**
