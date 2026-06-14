@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.viewModels
+import androidx.annotation.Keep
 import androidx.core.view.get
 import androidx.core.view.postDelayed
 import androidx.fragment.app.Fragment
@@ -240,6 +241,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
      * @param view      用于兜底获取 context 资源维度
      * @return 底部内边距（px），范围 8dp-20dp
      */
+    @Keep
     private fun computeBottomPadding(rawHeight: Int, view: View): Int {
         val minPad = 8.dpToPx()
         val maxPad = 20.dpToPx()

@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
+import androidx.annotation.Keep
 import com.qmdeve.liquidglass.widget.LiquidGlassView
 import io.legado.app.data.entities.LayoutMode
 import io.legado.app.data.entities.MaterialMode
@@ -37,6 +38,7 @@ import io.legado.app.utils.dpToPx
  *
  * 不做任何运行时 View 移动，只修改属性。
  */
+@Keep
 object NavigationBarEffectApplier {
 
     private const val TAG_OVERLAY = "navigation_bar_overlay"

@@ -14,7 +14,7 @@
 
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+-keepattributes SourceFile,LineNumberTable
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
@@ -173,4 +173,30 @@ cn.hutool.core.util.**{*;}
     public <init>(android.content.Context, java.lang.Boolean);
     public <init>(android.content.Context, android.util.AttributeSet);
     public <init>(android.content.Context, android.util.AttributeSet, int);
+}
+
+# ===== 底栏液态玻璃效果 & 导航栏间距适配 =====
+# R8 在 release 中开启完整优化 (-dontoptimize 未启用)，可能内联或移除以下关键扩展函数，
+# 导致 WindowInsets 处理逻辑在 release 与 debug 中行为不一致。
+
+# Splitties bottomPadding — MainActivity.initView() 中设置底栏间距的核心调用
+-keep class splitties.views.ViewsKt {
+    *** getBottomPadding(...);
+    *** setBottomPadding(...);
+}
+
+# WindowInsets 扩展属性 — navigationBarHeight 在手势导航高度计算中不可被内联移除
+-keep class io.legado.app.utils.WindowInsetsExtensionsKt {
+    *** getNavigationBarHeight(...);
+    *** getImeHeight(...);
+}
+
+# ViewExtensions — setOnApplyWindowInsetsListenerCompat 及 requestLayoutBroken 逻辑
+-keep class io.legado.app.utils.ViewExtensionsKt {
+    *** setOnApplyWindowInsetsListenerCompat(...);
+}
+
+# NavigationBarEffectApplier — Kotlin object，R8 不可优化其 applyEffect/setupGlassView
+-keep class io.legado.app.model.NavigationBarEffectApplier {
+    *;
 }
