@@ -9,8 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.qmdeve.liquidglass.widget.LiquidGlassView
 import io.legado.app.data.entities.LayoutMode
 import io.legado.app.data.entities.MaterialMode
@@ -146,14 +144,12 @@ object NavigationBarEffectApplier {
         }
 
         // 底栏加 margin。
-        // 底部 margin 需额外包含系统导航栏（手势条）高度，避免小米等设备上底栏与手势条重叠。
-        // WindowInsets 在部分定制 ROM 上可能存在时序问题，因此同时使用 context 资源高度作为兜底。
+        // 手势条避让由 MainActivity.initView() 中的 WindowInsetsListener 通过
+        // bottomPadding 处理，此处仅设置视觉间距。
         val margin = 16.dpToPx()
-        val navBarInset = getNavBarInset(navView)
-        val bottomMargin = margin + navBarInset
         val lp = navView.layoutParams as? FrameLayout.LayoutParams
         if (lp != null) {
-            lp.setMargins(margin, 0, margin, bottomMargin)
+            lp.setMargins(margin, 0, margin, margin)
             lp.gravity = Gravity.BOTTOM
             navView.layoutParams = lp
         }
@@ -204,7 +200,7 @@ object NavigationBarEffectApplier {
             } else {
                 overlay.background = createOverlayDrawable(config)
             }
-            (overlay.layoutParams as? FrameLayout.LayoutParams)?.setMargins(margin, 0, margin, bottomMargin)
+            (overlay.layoutParams as? FrameLayout.LayoutParams)?.setMargins(margin, 0, margin, margin)
         } else {
             // 正常：glass + overlay
             if (glassView == null) {
@@ -213,14 +209,16 @@ object NavigationBarEffectApplier {
                     rootView.addView(glassView, rootView.indexOfChild(navView))
                 }
             } else {
-                if (!setupGlassView(glassView, binding, config)) {
-                    // 已有 view 但重新配置失败（如源 View 已 detach），从视图树移除
-                    rootView.removeView(glassView)
-                    glassView = null
+                // 移除旧 view 重建，避免 liquidglass 库内 Handler 回调
+                // 在 bind() 重绑后访问已释放的渲染引擎导致 NPE
+                rootView.removeView(glassView)
+                glassView = createGlassView(binding, config)
+                if (glassView != null) {
+                    rootView.addView(glassView, rootView.indexOfChild(navView))
                 }
             }
             glassView?.let { gv ->
-                (gv.layoutParams as? FrameLayout.LayoutParams)?.setMargins(margin, 0, margin, bottomMargin)
+                (gv.layoutParams as? FrameLayout.LayoutParams)?.setMargins(margin, 0, margin, margin)
             }
 
             if (overlay == null) {
@@ -229,7 +227,7 @@ object NavigationBarEffectApplier {
             } else {
                 overlay.background = createOverlayDrawable(config)
             }
-            (overlay.layoutParams as? FrameLayout.LayoutParams)?.setMargins(margin, 0, margin, bottomMargin)
+            (overlay.layoutParams as? FrameLayout.LayoutParams)?.setMargins(margin, 0, margin, margin)
         }
     }
 
@@ -422,25 +420,6 @@ object NavigationBarEffectApplier {
     }
 
     // ---- 系统导航栏颜色控制 ----
-
-    /**
-     * 获取系统导航栏（手势条）高度，用于确保底栏 margin 不与之重叠。
-     *
-     * 优先使用 WindowInsets API（Android 10+ 更准确），
-     * 回退到 Android 资源维度查询（兼容小米等定制 ROM）。
-     */
-    private fun getNavBarInset(navView: View): Int {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val inset = navView.rootWindowInsets
-                ?.getInsets(WindowInsetsCompat.Type.navigationBars())
-                ?.bottom ?: 0
-            if (inset > 0) return inset
-        }
-        return navView.context.resources.run {
-            val resId = getIdentifier("navigation_bar_height", "dimen", "android")
-            if (resId > 0) getDimensionPixelSize(resId) else 0
-        }
-    }
 
     /**
      * 将系统导航栏设为透明
