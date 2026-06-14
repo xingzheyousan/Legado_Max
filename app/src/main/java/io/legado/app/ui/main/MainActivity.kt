@@ -216,10 +216,20 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             bottomNavigationView.setBackgroundResource(R.drawable.bg_eink_border_top)
         }
         // ThemeBottomNavigationVIew 在 init 中清除了 WindowInsetsListener，
-        // 重新设置使其为底栏添加导航栏高度的 bottomPadding，避免被系统手势条遮挡
+        // 重新设置使其为底栏添加导航栏高度的 bottomPadding，避免被系统手势条遮挡。
+        // 小米 MIUI/HyperOS 在手势导航模式下 WindowInsets 可能存在时序问题，
+        // 添加 post 延迟校验确保 bottomPadding 最终正确。
         bottomNavigationView.setOnApplyWindowInsetsListenerCompat { view, windowInsets ->
             val height = windowInsets.navigationBarHeight
             view.bottomPadding = height
+            // 延迟校验：小米等定制 ROM 上 WindowInsets 可能存在时序问题
+            view.post {
+                val fallback = view.context.navigationBarHeight
+                if (fallback > 0 && view.bottomPadding < fallback) {
+                    view.bottomPadding = fallback
+                    view.requestLayout()
+                }
+            }
             windowInsets.inset(0, 0, 0, height)
         }
     }
