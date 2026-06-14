@@ -211,12 +211,14 @@ object NavigationBarEffectApplier {
                     rootView.addView(glassView, rootView.indexOfChild(navView))
                 }
             } else {
-                // 移除旧 view 重建，避免 liquidglass 库内 Handler 回调
-                // 在 bind() 重绑后访问已释放的渲染引擎导致 NPE
-                rootView.removeView(glassView)
-                glassView = createGlassView(binding, config)
-                if (glassView != null) {
-                    rootView.addView(glassView, rootView.indexOfChild(navView))
+                // 已有 glassView：仅更新视觉参数（不重建），避免主题切换时移除-重建导致的闪烁
+                if (!updateGlassView(glassView, binding, config)) {
+                    // 更新失败（源 View 已 detach 或库状态异常），回退到重建策略
+                    rootView.removeView(glassView)
+                    glassView = createGlassView(binding, config)
+                    if (glassView != null) {
+                        rootView.addView(glassView, rootView.indexOfChild(navView))
+                    }
                 }
             }
             glassView?.let { gv ->
@@ -352,7 +354,34 @@ object NavigationBarEffectApplier {
     // ---- LiquidGlassView 配置 ----
 
     /**
-     * 配置 LiquidGlassView
+     * 更新已绑定的 LiquidGlassView 视觉参数（日夜间主题切换时调用）。
+     *
+     * 不调用 bind()，避免 liquidglass 库内部 Handler 回调访问已释放引擎导致 NPE。
+     * 仅在源 View 未变更的场景下安全使用（theme、materialMode、opacity 等变更）。
+     * 如果源 View 已 detach，返回 false，由调用方回退到重建策略。
+     */
+    private fun updateGlassView(
+        glassView: LiquidGlassView,
+        binding: ActivityMainBinding,
+        config: NavigationBarConfig
+    ): Boolean {
+        try {
+            // 校验源 View 仍然可用
+            val linearLayout = binding.viewPagerMain.parent as? ViewGroup
+            if (linearLayout == null) {
+                (glassView.parent as? ViewGroup)?.removeView(glassView)
+                return false
+            }
+            applyVisualParams(glassView, config)
+            return true
+        } catch (_: Exception) {
+            (glassView.parent as? ViewGroup)?.removeView(glassView)
+            return false
+        }
+    }
+
+    /**
+     * 配置 LiquidGlassView（新 view 创建时调用）
      *
      * 绑定 LinearLayout（ViewPager 的父容器）作为采样源，
      * 因为 LiquidGlassView.bind() 要求 source 是同一父容器的兄弟 View。
@@ -365,60 +394,63 @@ object NavigationBarEffectApplier {
         config: NavigationBarConfig
     ): Boolean {
         try {
-            // 绑定 LinearLayout（兄弟 View）而非 ViewPager（非兄弟）
             // LiquidGlassView.bind() 是必须的前置步骤，它初始化库内部的渲染状态。
-            // 如果 ViewPager 尚未附着到父视图（Activity 生命周期早期、配置变更中等），
-            // bind() 无法执行，内部字段保持 null，后续任何 setter/invalidate() 都会触发 NPE。
+            // 如果 ViewPager 尚未附着到父视图，bind() 无法执行，内部字段保持 null，
+            // 后续任何 setter/invalidate() 都会触发 NPE。
             val linearLayout = binding.viewPagerMain.parent as? ViewGroup
             if (linearLayout == null) {
-                // View 层级未就绪，从视图树移除并返回失败
                 (glassView.parent as? ViewGroup)?.removeView(glassView)
                 return false
             }
-
             glassView.bind(linearLayout)
-            glassView.visibility = View.VISIBLE
-
-            glassView.setCornerRadius(24f.dpToPx().toFloat())
-
-            when (config.materialMode) {
-                MaterialMode.GLASS -> {
-                    glassView.setRefractionHeight(30f.dpToPx().toFloat())
-                    glassView.setRefractionOffset(90f.dpToPx().toFloat())
-                    glassView.setBlurRadius(12f.dpToPx().toFloat())
-                    glassView.setDispersion(0.5f)
-                    glassView.setTintColorRed(1.0f)
-                    glassView.setTintColorGreen(1.0f)
-                    glassView.setTintColorBlue(1.0f)
-                    glassView.setTintAlpha(0.05f)
-                }
-                MaterialMode.FROSTED -> {
-                    glassView.setRefractionHeight(0f)
-                    glassView.setRefractionOffset(0f)
-                    glassView.setBlurRadius(40f.dpToPx().toFloat())
-                    glassView.setDispersion(0f)
-                    glassView.setTintColorRed(1.0f)
-                    glassView.setTintColorGreen(1.0f)
-                    glassView.setTintColorBlue(1.0f)
-                    glassView.setTintAlpha(0.25f)
-                }
-                else -> {
-                    glassView.setRefractionHeight(0f)
-                    glassView.setBlurRadius(0f)
-                    glassView.setTintAlpha(0f)
-                }
-            }
-
-            glassView.setDraggableEnabled(false)
-            glassView.setElasticEnabled(false)
-            glassView.setTouchEffectEnabled(false)
-            glassView.invalidate()
+            applyVisualParams(glassView, config)
             return true
-        } catch (e: Exception) {
-            // bind() 可能成功但后续 setter 失败（库内部状态异常）
+        } catch (_: Exception) {
             (glassView.parent as? ViewGroup)?.removeView(glassView)
             return false
         }
+    }
+
+    /**
+     * 应用 LiquidGlassView 的视觉参数（bind 之后调用）。
+     * 日夜间主题切换时通过 [updateGlassView] 复用此方法，避免移除-重建导致的闪烁。
+     */
+    private fun applyVisualParams(glassView: LiquidGlassView, config: NavigationBarConfig) {
+        glassView.visibility = View.VISIBLE
+        glassView.setCornerRadius(24f.dpToPx().toFloat())
+
+        when (config.materialMode) {
+            MaterialMode.GLASS -> {
+                glassView.setRefractionHeight(30f.dpToPx().toFloat())
+                glassView.setRefractionOffset(90f.dpToPx().toFloat())
+                glassView.setBlurRadius(12f.dpToPx().toFloat())
+                glassView.setDispersion(0.5f)
+                glassView.setTintColorRed(1.0f)
+                glassView.setTintColorGreen(1.0f)
+                glassView.setTintColorBlue(1.0f)
+                glassView.setTintAlpha(0.05f)
+            }
+            MaterialMode.FROSTED -> {
+                glassView.setRefractionHeight(0f)
+                glassView.setRefractionOffset(0f)
+                glassView.setBlurRadius(40f.dpToPx().toFloat())
+                glassView.setDispersion(0f)
+                glassView.setTintColorRed(1.0f)
+                glassView.setTintColorGreen(1.0f)
+                glassView.setTintColorBlue(1.0f)
+                glassView.setTintAlpha(0.25f)
+            }
+            else -> {
+                glassView.setRefractionHeight(0f)
+                glassView.setBlurRadius(0f)
+                glassView.setTintAlpha(0f)
+            }
+        }
+
+        glassView.setDraggableEnabled(false)
+        glassView.setElasticEnabled(false)
+        glassView.setTouchEffectEnabled(false)
+        glassView.invalidate()
     }
 
     // ---- 系统导航栏颜色控制 ----
