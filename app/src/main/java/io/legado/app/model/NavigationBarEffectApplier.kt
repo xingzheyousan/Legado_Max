@@ -203,11 +203,19 @@ object NavigationBarEffectApplier {
             // 正常：glass + overlay
             if (glassView == null) {
                 glassView = createGlassView(binding, config)
-                rootView.addView(glassView, rootView.indexOfChild(navView))
+                if (glassView != null) {
+                    rootView.addView(glassView, rootView.indexOfChild(navView))
+                }
             } else {
-                setupGlassView(glassView, binding, config)
+                if (!setupGlassView(glassView, binding, config)) {
+                    // 已有 view 但重新配置失败（如源 View 已 detach），从视图树移除
+                    rootView.removeView(glassView)
+                    glassView = null
+                }
             }
-            (glassView.layoutParams as? FrameLayout.LayoutParams)?.setMargins(margin, 0, margin, margin)
+            glassView?.let { gv ->
+                (gv.layoutParams as? FrameLayout.LayoutParams)?.setMargins(margin, 0, margin, margin)
+            }
 
             if (overlay == null) {
                 overlay = createOverlayView(binding.root.context, config)
@@ -282,8 +290,8 @@ object NavigationBarEffectApplier {
         }
     }
 
-    private fun createGlassView(binding: ActivityMainBinding, config: NavigationBarConfig): LiquidGlassView {
-        return LiquidGlassView(binding.root.context).apply {
+    private fun createGlassView(binding: ActivityMainBinding, config: NavigationBarConfig): LiquidGlassView? {
+        val glassView = LiquidGlassView(binding.root.context).apply {
             tag = TAG_GLASS_VIEW
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -292,8 +300,9 @@ object NavigationBarEffectApplier {
             )
             isClickable = false
             isFocusable = false
-            setupGlassView(this, binding, config)
         }
+        // bind() 必须在设置其他参数前完成；如果失败则返回 null，调用方不应将 view 加入视图树
+        return if (setupGlassView(glassView, binding, config)) glassView else null
     }
 
     // ---- Overlay Drawable ----
@@ -348,15 +357,21 @@ object NavigationBarEffectApplier {
         glassView: LiquidGlassView,
         binding: ActivityMainBinding,
         config: NavigationBarConfig
-    ) {
+    ): Boolean {
         try {
-            glassView.visibility = View.VISIBLE
-
             // 绑定 LinearLayout（兄弟 View）而非 ViewPager（非兄弟）
+            // LiquidGlassView.bind() 是必须的前置步骤，它初始化库内部的渲染状态。
+            // 如果 ViewPager 尚未附着到父视图（Activity 生命周期早期、配置变更中等），
+            // bind() 无法执行，内部字段保持 null，后续任何 setter/invalidate() 都会触发 NPE。
             val linearLayout = binding.viewPagerMain.parent as? ViewGroup
-            if (linearLayout != null) {
-                glassView.bind(linearLayout)
+            if (linearLayout == null) {
+                // View 层级未就绪，从视图树移除并返回失败
+                (glassView.parent as? ViewGroup)?.removeView(glassView)
+                return false
             }
+
+            glassView.bind(linearLayout)
+            glassView.visibility = View.VISIBLE
 
             glassView.setCornerRadius(24f.dpToPx().toFloat())
 
@@ -392,8 +407,11 @@ object NavigationBarEffectApplier {
             glassView.setElasticEnabled(false)
             glassView.setTouchEffectEnabled(false)
             glassView.invalidate()
+            return true
         } catch (e: Exception) {
-            glassView.visibility = View.GONE
+            // bind() 可能成功但后续 setter 失败（库内部状态异常）
+            (glassView.parent as? ViewGroup)?.removeView(glassView)
+            return false
         }
     }
 
