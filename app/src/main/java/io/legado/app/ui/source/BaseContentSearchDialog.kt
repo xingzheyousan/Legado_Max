@@ -96,9 +96,9 @@ abstract class BaseContentSearchDialog : BaseDialogFragment(R.layout.dialog_rule
 
     /**
      * 加载所有源的可搜索字段。
-     * 子类应根据 allSources 决定加载范围，通过 callback 返回结果。
+     * 子类应根据 allSources 决定加载范围，直接返回结果。
      */
-    abstract fun loadSourceItems(allSources: Boolean, callback: (List<SourceFieldItem>) -> Unit)
+    abstract suspend fun loadSourceItems(allSources: Boolean): List<SourceFieldItem>
 
     abstract suspend fun performSearch(query: String, allItems: List<SourceFieldItem>): List<SourceFieldItem>
 
@@ -709,15 +709,20 @@ abstract class BaseContentSearchDialog : BaseDialogFragment(R.layout.dialog_rule
     private fun loadSources() {
         sourcesLoaded = false
         showLoadingState()
-        loadSourceItems(searchAllSources) { items ->
-            allSourceItems = items
-            sourcesLoaded = true
-            hideLoadingState()
-            val query = binding.searchEditText.text.toString().trim()
-            if (query.isNotEmpty()) {
-                doSearch(query)
-            } else {
-                showInitialState()
+        lifecycleScope.launch {
+            try {
+                allSourceItems = loadSourceItems(searchAllSources)
+                sourcesLoaded = true
+                hideLoadingState()
+                val query = binding.searchEditText.text.toString().trim()
+                if (query.isNotEmpty()) {
+                    doSearch(query)
+                } else {
+                    showInitialState()
+                }
+            } catch (e: Exception) {
+                hideLoadingState()
+                // Handle error
             }
         }
     }
