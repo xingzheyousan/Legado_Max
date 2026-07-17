@@ -60,34 +60,33 @@ class SpeakEngineContentSearchDialog : BaseContentSearchDialog() {
     override fun getContentSearchType() = ContentSearchType.SPEAK_ENGINE
 
     override suspend fun loadSourceItems(allSources: Boolean): List<SourceFieldItem> {
-        viewModel.loadEngines { engines ->
-            allEngines = engines
-            cachedJsonStrings = engines.associate { it.id.toString() to GSON.toJson(it) }
-            val items = mutableListOf<SourceFieldItem>()
-            for (engine in engines) {
-                val engineId = engine.id.toString()
-                val engineName = engine.name.ifBlank { "未命名($engineId)" }
-                for ((tabKey, fields) in TAB_FIELDS) {
-                    for ((fieldKey, fieldName) in fields) {
-                        val value = getFieldValue(engine, fieldKey) ?: continue
-                        if (value.isNotBlank()) {
-                            items.add(
-                                SourceFieldItem(
-                                    sourceName = engineName,
-                                    sourceUrl = engineId,
-                                    tabKey = tabKey,
-                                    tabName = TAB_NAMES[tabKey] ?: tabKey,
-                                    fieldKey = fieldKey,
-                                    fieldName = fieldName,
-                                    value = value
-                                )
+        val engines = viewModel.loadEngines()
+        allEngines = engines
+        cachedJsonStrings = engines.associate { it.id.toString() to GSON.toJson(it) }
+        val items = mutableListOf<SourceFieldItem>()
+        for (engine in engines) {
+            val engineId = engine.id.toString()
+            val engineName = engine.name.ifBlank { "未命名($engineId)" }
+            for ((tabKey, fields) in TAB_FIELDS) {
+                for ((fieldKey, fieldName) in fields) {
+                    val value = getFieldValue(engine, fieldKey) ?: continue
+                    if (value.isNotBlank()) {
+                        items.add(
+                            SourceFieldItem(
+                                sourceName = engineName,
+                                sourceUrl = engineId,
+                                tabKey = tabKey,
+                                tabName = TAB_NAMES[tabKey] ?: tabKey,
+                                fieldKey = fieldKey,
+                                fieldName = fieldName,
+                                value = value
                             )
-                        }
+                        )
                     }
                 }
             }
-            callback(items)
         }
+        return items
     }
 
     override suspend fun performSearch(

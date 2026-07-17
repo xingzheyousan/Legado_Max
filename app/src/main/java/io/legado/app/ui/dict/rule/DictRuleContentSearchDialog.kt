@@ -47,33 +47,32 @@ class DictRuleContentSearchDialog : BaseContentSearchDialog() {
     override fun getContentSearchType() = ContentSearchType.DICT_RULE
 
     override suspend fun loadSourceItems(allSources: Boolean): List<SourceFieldItem> {
-        viewModel.loadRules(allSources) { rules ->
-            allRules = rules
-            cachedJsonStrings = rules.associate { it.name to GSON.toJson(it) }
-            val items = mutableListOf<SourceFieldItem>()
-            for (rule in rules) {
-                val ruleName = rule.name.ifBlank { "未命名" }
-                for ((tabKey, fields) in TAB_FIELDS) {
-                    for ((fieldKey, fieldName) in fields) {
-                        val value = getFieldValue(rule, fieldKey) ?: continue
-                        if (value.isNotBlank()) {
-                            items.add(
-                                SourceFieldItem(
-                                    sourceName = ruleName,
-                                    sourceUrl = rule.name,
-                                    tabKey = tabKey,
-                                    tabName = TAB_NAMES[tabKey] ?: tabKey,
-                                    fieldKey = fieldKey,
-                                    fieldName = fieldName,
-                                    value = value
-                                )
+        val rules = viewModel.loadRules(allSources)
+        allRules = rules
+        cachedJsonStrings = rules.associate { it.name to GSON.toJson(it) }
+        val items = mutableListOf<SourceFieldItem>()
+        for (rule in rules) {
+            val ruleName = rule.name.ifBlank { "未命名" }
+            for ((tabKey, fields) in TAB_FIELDS) {
+                for ((fieldKey, fieldName) in fields) {
+                    val value = getFieldValue(rule, fieldKey) ?: continue
+                    if (value.isNotBlank()) {
+                        items.add(
+                            SourceFieldItem(
+                                sourceName = ruleName,
+                                sourceUrl = rule.name,
+                                tabKey = tabKey,
+                                tabName = TAB_NAMES[tabKey] ?: tabKey,
+                                fieldKey = fieldKey,
+                                fieldName = fieldName,
+                                value = value
                             )
-                        }
+                        )
                     }
                 }
             }
-            callback(items)
         }
+        return items
     }
 
     override suspend fun performSearch(

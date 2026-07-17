@@ -61,35 +61,34 @@ class ReplaceRuleContentSearchDialog : BaseContentSearchDialog() {
     override fun getContentSearchType() = ContentSearchType.REPLACE_RULE
 
     override suspend fun loadSourceItems(allSources: Boolean): List<SourceFieldItem> {
-        viewModel.loadRules(allSources) { rules ->
-            allRules = rules
-            cachedJsonStrings = rules.associate { it.id.toString() to GSON.toJson(it) }
-            val items = mutableListOf<SourceFieldItem>()
-            for (rule in rules) {
-                val ruleId = rule.id.toString()
-                val ruleName = rule.getDisplayNameGroup().ifBlank { "未命名($ruleId)" }
-                for ((tabKey, fields) in TAB_FIELDS) {
-                    for ((fieldKey, fieldName) in fields) {
-                        val value = getFieldValue(rule, fieldKey) ?: continue
-                        if (value.isNotBlank()) {
-                            items.add(
-                                SourceFieldItem(
-                                    sourceName = ruleName,
-                                    sourceUrl = ruleId,
-                                    tabKey = tabKey,
-                                    tabName = TAB_NAMES[tabKey] ?: tabKey,
-                                    fieldKey = fieldKey,
-                                    fieldName = fieldName,
-                                    value = value,
-                                    sourceGroup = rule.group
-                                )
+        val rules = viewModel.loadRules(allSources)
+        allRules = rules
+        cachedJsonStrings = rules.associate { it.id.toString() to GSON.toJson(it) }
+        val items = mutableListOf<SourceFieldItem>()
+        for (rule in rules) {
+            val ruleId = rule.id.toString()
+            val ruleName = rule.getDisplayNameGroup().ifBlank { "未命名($ruleId)" }
+            for ((tabKey, fields) in TAB_FIELDS) {
+                for ((fieldKey, fieldName) in fields) {
+                    val value = getFieldValue(rule, fieldKey) ?: continue
+                    if (value.isNotBlank()) {
+                        items.add(
+                            SourceFieldItem(
+                                sourceName = ruleName,
+                                sourceUrl = ruleId,
+                                tabKey = tabKey,
+                                tabName = TAB_NAMES[tabKey] ?: tabKey,
+                                fieldKey = fieldKey,
+                                fieldName = fieldName,
+                                value = value,
+                                sourceGroup = rule.group
                             )
-                        }
+                        )
                     }
                 }
             }
-            callback(items)
         }
+        return items
     }
 
     override suspend fun performSearch(

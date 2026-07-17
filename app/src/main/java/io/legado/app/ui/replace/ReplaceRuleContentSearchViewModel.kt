@@ -9,9 +9,21 @@ import io.legado.app.utils.GSON
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.writeToOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class ReplaceRuleContentSearchViewModel(application: Application) : BaseViewModel(application) {
+
+    suspend fun loadRules(allRules: Boolean): List<ReplaceRule> {
+        return withContext(Dispatchers.IO) {
+            if (allRules) {
+                appDb.replaceRuleDao.all
+            } else {
+                appDb.replaceRuleDao.allEnabled
+            }
+        }
+    }
 
     fun loadRules(allRules: Boolean, callback: (List<ReplaceRule>) -> Unit) {
         execute {

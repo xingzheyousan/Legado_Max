@@ -1,6 +1,5 @@
 package io.legado.app.ui.book.source.manage
 
-import android.os.Bundle
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import io.legado.app.ui.book.source.edit.BookSourceEditActivity
@@ -9,10 +8,7 @@ import io.legado.app.ui.source.ContentSearchType
 import io.legado.app.ui.source.SourceFieldItem
 import io.legado.app.utils.share
 import io.legado.app.utils.startActivity
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * 书源内容查询界面，用于按规则字段或完整 JSON 搜索书源配置。
@@ -21,21 +17,6 @@ import kotlinx.coroutines.withContext
 class SourceContentSearchDialog : BaseContentSearchDialog() {
 
     private val viewModel by viewModels<SourceContentSearchViewModel>()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // 观察 ViewModel 的搜索结果状态
-        lifecycleScope.launch {
-            viewModel.uiState.collectLatest { uiState ->
-                if (uiState.isLoading) {
-                    // 可以在这里显示加载状态
-                } else {
-                    lastResults = uiState.searchResults
-                    adapter.submitList(uiState.searchResults)
-                }
-            }
-        }
-    }
 
     override fun getDialogTitle() = "书源内容查询"
 

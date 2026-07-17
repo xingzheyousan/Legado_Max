@@ -8,9 +8,21 @@ import io.legado.app.utils.GSON
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.writeToOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class RssSourceContentSearchViewModel(application: Application) : BaseViewModel(application) {
+
+    suspend fun loadSources(allSources: Boolean): List<io.legado.app.data.entities.RssSource> {
+        return withContext(Dispatchers.IO) {
+            if (allSources) {
+                appDb.rssSourceDao.all
+            } else {
+                appDb.rssSourceDao.all.filter { it.enabled }
+            }
+        }
+    }
 
     fun loadSources(allSources: Boolean, callback: (List<io.legado.app.data.entities.RssSource>) -> Unit) {
         execute {

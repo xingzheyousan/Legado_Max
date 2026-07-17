@@ -1,6 +1,7 @@
 package io.legado.app.ui.source
 
 import android.os.Bundle
+import android.os.Parcelable
 import android.text.Editable
 import android.text.SpannableString
 import android.text.TextWatcher
@@ -689,8 +690,9 @@ abstract class BaseContentSearchDialog : BaseDialogFragment(R.layout.dialog_rule
 
                 dismissHistoryPopup()
 
+                //协程
                 searchJob = lifecycleScope.launch {
-                    delay(DEBOUNCE_DELAY)
+                    delay(DEBOUNCE_DELAY)//搜索防抖
                     currentSearchTerm = query
                     doSearch(query)
                 }
@@ -1240,10 +1242,16 @@ abstract class BaseContentSearchDialog : BaseDialogFragment(R.layout.dialog_rule
         data class Item(val field: SourceFieldItem) : SearchListItem()
     }
 
+    //伴生对象，定义类的静态常量和工具属性
     companion object {
-        protected const val DEBOUNCE_DELAY = 300L
+        protected const val DEBOUNCE_DELAY = 300L//300毫秒搜索防抖
+        // RecyclerView 视图类型：头部（Header）
+        // 用于显示搜索历史、提示词等顶部内容
         protected const val VIEW_TYPE_HEADER = 0
+        // RecyclerView 视图类型：搜索结果（Result）
+        // 用于显示搜索到的具体条目
         protected const val VIEW_TYPE_RESULT = 1
+        // 搜索历史最大保存数量：10条
         private const val MAX_HISTORY_SIZE = 10
     }
 
@@ -1338,9 +1346,10 @@ private data class SearchScopeOption(
 
 /**
  * 可搜索的源字段条目。
- * @param value     显示文本（可含上下文截断），用于列表展示和高亮
+ * @param value     显示文本（可含上下文截断），用于列表展示和高亮  
  * @param fullValue 完整字段文本，用于预览弹窗
  */
+@kotlinx.parcelize.Parcelize
 data class SourceFieldItem(
     val sourceName: String,
     val sourceUrl: String,
@@ -1351,4 +1360,4 @@ data class SourceFieldItem(
     val value: String,
     val fullValue: String = value,
     val sourceGroup: String? = null
-)
+) : Parcelable

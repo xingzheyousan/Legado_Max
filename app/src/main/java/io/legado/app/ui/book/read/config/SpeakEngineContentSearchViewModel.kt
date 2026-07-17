@@ -9,9 +9,17 @@ import io.legado.app.utils.GSON
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.writeToOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class SpeakEngineContentSearchViewModel(application: Application) : BaseViewModel(application) {
+
+    suspend fun loadEngines(): List<HttpTTS> {
+        return withContext(Dispatchers.IO) {
+            appDb.httpTTSDao.all
+        }
+    }
 
     fun loadEngines(callback: (List<HttpTTS>) -> Unit) {
         execute {

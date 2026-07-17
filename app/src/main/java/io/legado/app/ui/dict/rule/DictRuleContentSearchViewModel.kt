@@ -9,9 +9,21 @@ import io.legado.app.utils.GSON
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.writeToOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class DictRuleContentSearchViewModel(application: Application) : BaseViewModel(application) {
+
+    suspend fun loadRules(allRules: Boolean): List<DictRule> {
+        return withContext(Dispatchers.IO) {
+            if (allRules) {
+                appDb.dictRuleDao.all
+            } else {
+                appDb.dictRuleDao.enabled
+            }
+        }
+    }
 
     fun loadRules(allRules: Boolean, callback: (List<DictRule>) -> Unit) {
         execute {

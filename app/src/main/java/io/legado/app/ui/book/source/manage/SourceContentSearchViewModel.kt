@@ -5,7 +5,6 @@ import android.os.Parcelable
 import com.google.gson.JsonObject
 import io.legado.app.base.BaseViewModel
 import io.legado.app.data.appDb
-import io.legado.app.ui.source.BaseContentSearchDialog
 import io.legado.app.ui.source.ContentSearchEngine
 import io.legado.app.ui.source.JsonSearchItem
 import io.legado.app.ui.source.SourceFieldItem
@@ -14,9 +13,11 @@ import io.legado.app.utils.GSON
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.writeToOutputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import java.io.File
 
@@ -138,13 +139,13 @@ class SourceContentSearchViewModel(application: Application) : BaseViewModel(app
      * 用于JSON全文搜索和字段提取
      */
     private var allSources: List<Triple<String, String, JsonObject>> = emptyList()
-    
+
     /**
      * 所有可搜索的字段条目列表
      * 由原始书源数据解析而来，包含每个字段的详细信息
      */
     private var allSourceItems: List<SourceFieldItem> = emptyList()
-    
+
     /**
      * JSON搜索项目列表
      * 用于全文JSON搜索功能
@@ -157,14 +158,14 @@ class SourceContentSearchViewModel(application: Application) : BaseViewModel(app
      * @return 构建好的搜索字段列表
      */
     suspend fun loadSourceItems(enabledOnly: Boolean): List<SourceFieldItem> {
-        return execute {
+        return withContext(Dispatchers.IO) {
             // 从数据库获取书源数据
             val sources = if (enabledOnly) {
                 appDb.bookSourceDao.getAllSources().filter { it.enabled }
             } else {
                 appDb.bookSourceDao.getAllSources()
             }
-            
+
             // 转换为(名称, URL, JSON对象)的三元组列表
             allSources = sources.map { source ->
                 Triple(
@@ -176,7 +177,7 @@ class SourceContentSearchViewModel(application: Application) : BaseViewModel(app
 
             // 构建可搜索的字段条目
             allSourceItems = buildSourceFieldItems(allSources)
-            
+
             // 准备JSON全文搜索数据
             jsonSearchItems = allSources.map { (sourceName, sourceUrl, jsonObj) ->
                 JsonSearchItem(sourceName, sourceUrl, jsonObj.toString())
@@ -184,10 +185,10 @@ class SourceContentSearchViewModel(application: Application) : BaseViewModel(app
 
             // 更新各标签页的统计数量
             updateTabCounts()
-            
+
             // 返回构建结果
             allSourceItems
-        }.await() ?: emptyList()
+        }
     }
 
     /**
@@ -196,24 +197,24 @@ class SourceContentSearchViewModel(application: Application) : BaseViewModel(app
      * @return 导出的文件对象
      */
     suspend fun exportSources(sourceUrls: List<String>): File {
-        return execute {
+        return withContext(Dispatchers.IO) {
             // 筛选出要导出的书源
             val sources = appDb.bookSourceDao.getAllSources().filter {
                 it.bookSourceUrl in sourceUrls
             }
-            
+
             // 创建导出文件
             val path = "${context.filesDir}/shareBookSource.json"
             FileUtils.delete(path)  // 删除已存在文件
             val file = FileUtils.createFileWithReplace(path)
-            
+
             // 将书源数据写入JSON文件
             file.outputStream().buffered().use { out ->
                 GSON.writeToOutputStream(out, sources)
             }
-            
+
             file  // 返回创建的文件
-        }.await() ?: throw RuntimeException("导出书源失败")
+        }
     }
 
     /**
@@ -224,7 +225,7 @@ class SourceContentSearchViewModel(application: Application) : BaseViewModel(app
      * @return 搜索结果列表
      */
     suspend fun search(query: String, searchByRuleField: Boolean, selectedTab: String): List<SourceFieldItem> {
-        return execute {
+        return withContext(Dispatchers.IO) {
             // 根据选中的标签页过滤要搜索的内容
             val itemsToSearch = if (selectedTab == "__ALL__") {
                 allSourceItems
@@ -248,9 +249,9 @@ class SourceContentSearchViewModel(application: Application) : BaseViewModel(app
                 searchResults = results,
                 isLoading = false
             )
-            
+
             results
-        }.await() ?: emptyList()
+        }
     }
 
     /**
@@ -264,17 +265,17 @@ class SourceContentSearchViewModel(application: Application) : BaseViewModel(app
             val sources = appDb.bookSourceDao.getAllSources().filter {
                 it.bookSourceUrl in sourceUrls
             }
-            
+
             // 创建导出文件
             val path = "${context.filesDir}/shareBookSource.json"
             FileUtils.delete(path)  // 删除已存在文件
             val file = FileUtils.createFileWithReplace(path)
-            
+
             // 将书源数据写入JSON文件
             file.outputStream().buffered().use { out ->
                 GSON.writeToOutputStream(out, sources)
             }
-            
+
             file  // 返回创建的文件
         }.onSuccess {
             if (it != null) success(it)
@@ -297,18 +298,18 @@ class SourceContentSearchViewModel(application: Application) : BaseViewModel(app
      */
     private fun buildSourceFieldItems(sources: List<Triple<String, String, JsonObject>>): List<SourceFieldItem> {
         val items = mutableListOf<SourceFieldItem>()
-        
+
         // 遍历每个书源
         for ((sourceName, sourceUrl, jsonObj) in sources) {
             // 获取书源分组信息
             val sourceGroup = getFieldValue(jsonObj, "base", "bookSourceGroup")
-            
+
             // 遍历所有标签页的字段定义
             for ((tabKey, fields) in TAB_FIELDS) {
                 for ((fieldKey, fieldName) in fields) {
                     // 从JSON中提取字段值
                     val value = getFieldValue(jsonObj, tabKey, fieldKey) ?: continue
-                    
+
                     // 构建字段项目对象
                     items.add(SourceFieldItem(
                         sourceName = sourceName,
@@ -434,7 +435,7 @@ class SourceContentSearchViewModel(application: Application) : BaseViewModel(app
 
 @Parcelize
 data class SourceSearchUiState(
-    val searchResults: List<SourceFieldItem> = emptyList(),
-    val tabCounts: Map<String, Int> = emptyMap(),
-    val isLoading: Boolean = false
+    val searchResults: List<SourceFieldItem> = emptyList(), // 搜索结果
+    val tabCounts: Map<String, Int> = emptyMap(),// 标签页计数
+    val isLoading: Boolean = false // 加载状态
 ) : Parcelable

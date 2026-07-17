@@ -9,9 +9,21 @@ import io.legado.app.utils.GSON
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.writeToOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 // 目录规则内容查询搜索逻辑
 class TxtTocRuleContentSearchViewModel(application: Application) : BaseViewModel(application) {
+
+    suspend fun loadRules(allRules: Boolean): List<TxtTocRule> {
+        return withContext(Dispatchers.IO) {
+            if (allRules) {
+                appDb.txtTocRuleDao.all
+            } else {
+                appDb.txtTocRuleDao.enabled
+            }
+        }
+    }
 
     fun loadRules(allRules: Boolean, callback: (List<TxtTocRule>) -> Unit) {
         execute {

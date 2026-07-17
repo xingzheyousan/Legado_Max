@@ -49,33 +49,32 @@ class TxtTocRuleContentSearchDialog : BaseContentSearchDialog() {
     override fun getContentSearchType() = ContentSearchType.TXT_TOC_RULE
 
     override suspend fun loadSourceItems(allSources: Boolean): List<SourceFieldItem> {
-        viewModel.loadRules(allSources) { rules ->
-            allRules = rules
-            cachedJsonStrings = rules.associate { it.id.toString() to GSON.toJson(it) }
-            val items = mutableListOf<SourceFieldItem>()
-            for (rule in rules) {
-                val ruleId = rule.id.toString()
-                for ((tabKey, fields) in TAB_FIELDS) {
-                    for ((fieldKey, fieldName) in fields) {
-                        val value = getFieldValue(rule, fieldKey) ?: continue
-                        if (value.isNotBlank()) {
-                            items.add(
-                                SourceFieldItem(
-                                    sourceName = rule.name,
-                                    sourceUrl = ruleId,
-                                    tabKey = tabKey,
-                                    tabName = TAB_NAMES[tabKey] ?: tabKey,
-                                    fieldKey = fieldKey,
-                                    fieldName = fieldName,
-                                    value = value
-                                )
+        val rules = viewModel.loadRules(allSources)
+        allRules = rules
+        cachedJsonStrings = rules.associate { it.id.toString() to GSON.toJson(it) }
+        val items = mutableListOf<SourceFieldItem>()
+        for (rule in rules) {
+            val ruleId = rule.id.toString()
+            for ((tabKey, fields) in TAB_FIELDS) {
+                for ((fieldKey, fieldName) in fields) {
+                    val value = getFieldValue(rule, fieldKey) ?: continue
+                    if (value.isNotBlank()) {
+                        items.add(
+                            SourceFieldItem(
+                                sourceName = rule.name,
+                                sourceUrl = ruleId,
+                                tabKey = tabKey,
+                                tabName = TAB_NAMES[tabKey] ?: tabKey,
+                                fieldKey = fieldKey,
+                                fieldName = fieldName,
+                                value = value
                             )
-                        }
+                        )
                     }
                 }
             }
-            callback(items)
         }
+        return items
     }
 
     override suspend fun performSearch(
