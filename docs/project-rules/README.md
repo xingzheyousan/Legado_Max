@@ -15,6 +15,7 @@
 | [repository-rules.md](./repository-rules.md)         | Room 数据层三层架构（Entity → DAO → Repository）、Entity 禁止 Active Record、新代码标准写法、迁移策略                                                                                      | 碰 DB / 新建 Repository 前                                                                                             |
 | [api-compat-rules.md](./api-compat-rules.md)         | minSdk 23 / targetSdk 37 红线、`Build.VERSION.SDK_INT` 分支写法、Desugaring 覆盖边界、依赖 minSdk 红线（禁 overrideLibrary）、16KB 对齐 / Edge-to-Edge / FGS type 等 targetSdk 37 行为收紧 | 调用高版本 API、引入新依赖、发版前必查                                                                                 |
 | [live-event-bus-rules.md](./live-event-bus-rules.md) | LiveEventBus 全局配置语义（`autoClear(false)` 粘性默认开）、tag 必须走 `EventBus` 常量 + reified 封装、高频事件节流红线、与 Compose `Channel<Event>` 的选型边界                            | 跨组件通信 / 新增事件 / View↔Compose 事件选型时                                                                        |
+| [e2e-testing-rules.md](./e2e-testing-rules.md)       | 内置 Web 服务改动的强制 E2E 三层验证：触发时机、接口/网页/App 端验收标准、失败路径要求、环境降级策略；操作命令在 architecture 手册                                                         | 改动 `web/`、`api/` 或网页前端（assets / modules/web）的行为后、声称完成前必读                                         |
 
 ### 工程配置参考（手册，非红线）
 
@@ -46,22 +47,23 @@
 
 > "缺" 表示该领域**尚无项目级规范**，写相关代码前需先补规范或走人工评审，不要自由发挥。
 
-| 领域                                                 | 规范状态                                                          |
-| ---------------------------------------------------- | ----------------------------------------------------------------- |
-| 协程 / 异步                                          | ✅ coroutine-rules.md                                             |
-| Room 数据层                                          | ✅ repository-rules.md                                            |
-| Compose UI（结构/状态/性能/导航/可访问性/测试/迁移） | ✅ compose/ 共 8 文件                                             |
-| JS 规则引擎（Rhino，书源规则执行）                   | ❌ 缺：线程模型、超时、JS 与 Java 交互的异常边界                  |
-| 网络层（Cronet / OkHttp 双栈）                       | ❌ 缺：双栈选择策略、超时/重试、响应解析线程                      |
-| 全局单例（`ReadBook` / `CacheBook` / `AudioPlay`）   | ❌ 缺：线程安全、生命周期、状态持有红线                           |
-| 文件存储 / IO（书目录、缓存目录）                    | ❌ 缺：原子写、IO 线程、文件句柄释放                              |
-| 内嵌服务（NanoHTTPD / WebDAV）                       | ❌ 缺：端口、鉴权、安全边界                                       |
-| View / Compose 混用                                  | ⚠️ 部分覆盖（migration-review.md 只讲迁移方向，不讲长期混用边界） |
-| 事件双轨（LiveEventBus vs `Channel<Event>`）         | ✅ live-event-bus-rules.md（§3 双轨选型裁决规则）                 |
-| 后台任务 / 服务（WorkManager / ForegroundService）   | ⚠️ 仅一句话（coroutine-rules.md 规则 3），无独立规范              |
-| 日志与 PII 脱敏                                      | ❌ 缺                                                             |
-| 对外发布日志（updateLog.md）                         | ✅ update-log-rules.md                                            |
-| API 兼容 / minSdk 23 红线                            | ✅ api-compat-rules.md                                            |
+| 领域                                                 | 规范状态                                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 协程 / 异步                                          | ✅ coroutine-rules.md                                                           |
+| Room 数据层                                          | ✅ repository-rules.md                                                          |
+| Compose UI（结构/状态/性能/导航/可访问性/测试/迁移） | ✅ compose/ 共 8 文件                                                           |
+| JS 规则引擎（Rhino，书源规则执行）                   | ❌ 缺：线程模型、超时、JS 与 Java 交互的异常边界                                |
+| 网络层（Cronet / OkHttp 双栈）                       | ❌ 缺：双栈选择策略、超时/重试、响应解析线程                                    |
+| 全局单例（`ReadBook` / `CacheBook` / `AudioPlay`）   | ❌ 缺：线程安全、生命周期、状态持有红线                                         |
+| 文件存储 / IO（书目录、缓存目录）                    | ❌ 缺：原子写、IO 线程、文件句柄释放                                            |
+| 内嵌服务（NanoHTTPD / WebDAV）                       | ❌ 缺：端口、鉴权、安全边界                                                     |
+| Web 服务验证（E2E 三层）                             | ✅ e2e-testing-rules.md（操作手册：docs/architecture/Web服务端到端测试方法.md） |
+| View / Compose 混用                                  | ⚠️ 部分覆盖（migration-review.md 只讲迁移方向，不讲长期混用边界）               |
+| 事件双轨（LiveEventBus vs `Channel<Event>`）         | ✅ live-event-bus-rules.md（§3 双轨选型裁决规则）                               |
+| 后台任务 / 服务（WorkManager / ForegroundService）   | ⚠️ 仅一句话（coroutine-rules.md 规则 3），无独立规范                            |
+| 日志与 PII 脱敏                                      | ❌ 缺                                                                           |
+| 对外发布日志（updateLog.md）                         | ✅ update-log-rules.md                                                          |
+| API 兼容 / minSdk 23 红线                            | ✅ api-compat-rules.md                                                          |
 
 ## 三、跨文件规则速查（高频冲突点，已对齐）
 
