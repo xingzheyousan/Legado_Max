@@ -1200,6 +1200,9 @@
     <string name="show_last_update_time">顯示上次更新時間</string>
     <string name="refresh_list">刷新列表</string>
     <string name="tip_divider_color">分隔线颜色</string>
+    <string name="reader_info_template">資訊模板</string>
+    <string name="reader_info_template_hint">可輸入文字並插入下方佔位符</string>
+    <string name="reader_info_placeholders">佔位符</string>
     <string name="same_title_removed">移除重复标题</string>
     <string name="update_book_fail">更新失敗</string>
     <string name="notification_permission_rationale">閱讀需要發送通知來顯示朗讀控制和下載進度</string>
@@ -1539,6 +1542,8 @@
     <string name="web_service_auth_title">Web 服務驗證</string>
     <string name="web_service_token_summary">設定 Web 服務驗證 Token</string>
     <string name="web_service_token_title">Web 服務 Token</string>
+    <string name="local_network_permission_rationale">Android 17 起限制了本機網路存取，授予「附近的裝置」權限後其他裝置才能連線 Web 服務</string>
+    <string name="local_network_permission_denied">未授予本機網路權限，Web 服務已停止</string>
     <string name="welcome_show_time">歡迎頁顯示時間</string>
     <string name="welcome_show_time_summary">設為 0 則不顯示歡迎頁</string>
     <string name="content_query">內容查詢</string>

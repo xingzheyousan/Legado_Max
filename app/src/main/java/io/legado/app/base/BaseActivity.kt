@@ -212,53 +212,53 @@ abstract class BaseActivity<VB : ViewBinding>(
     private var defaultDecorBackground: Drawable? = null
 
     open fun upBackgroundImage() {
-        if (imageBg) {
-            // 首次调用时记录原始窗口背景（initTheme 设置的纯色底），
-            // 供背景图缺失/加载失败时恢复；此时必然还没应用过任何背景图
-            if (defaultDecorBackground == null) {
-                defaultDecorBackground = window.decorView.background
+        if (!imageBg) return
+        // 首次调用时记录原始窗口背景（initTheme 设置的纯色底），
+        // 供背景图缺失/加载失败时恢复；此时必然还没应用过任何背景图
+        if (defaultDecorBackground == null) {
+            defaultDecorBackground = window.decorView.background
+        }
+        // 签名为 null 表示未配置背景图或图片文件不存在（应显示纯色底）。
+        // 这条路径没有任何解码/模糊工作，必须同步落地：若仍绕一圈异步回调，
+        // 主界面背景会比底栏晚一拍甚至更久，两者的过渡节奏就对不齐了
+        // （底栏色值同步可读，见 MainActivity.applyNavigationBarPackage）。
+        val signature = ThemeConfig.getBackgroundSignature(this)
+        if (signature == null) {
+            onBackgroundDrawableLoaded(null)
+            return
+        }
+        // 命中进程级缓存：同步应用，Activity 重建/返回主界面时无需重新解码，无闪烁
+        ThemeConfig.getCachedBgImage(signature)?.let {
+            onBackgroundDrawableLoaded(it)
+            return
+        }
+        // 未命中缓存且确实配置了背景图：先用最近一次应用的背景图占位，
+        // 避免异步解码期间先显示纯色底再跳变成背景图
+        var placeholderApplied = false
+        ThemeConfig.getLastBgImage(signature)?.let {
+            onBackgroundDrawableLoaded(it)
+            placeholderApplied = true
+        }
+        val windowSize = windowManager.windowSize
+        lifecycleScope.launch(Dispatchers.Default) {
+            val drawable = try {
+                ThemeConfig.getBgImage(this@BaseActivity, windowSize)
+            } catch (_: OutOfMemoryError) {
+                toastOnUi("背景图片太大,内存溢出")
+                null
+            } catch (e: Exception) {
+                AppLog.put("加载背景出错\n${e.localizedMessage}", e)
+                null
             }
-            // 签名为 null 表示未配置背景图或图片文件不存在（应显示纯色底）
-            val signature = ThemeConfig.getBackgroundSignature(this)
-            // 命中进程级缓存：同步应用，Activity 重建/返回主界面时无需重新解码，无闪烁
-            if (signature != null) {
-                val cached = ThemeConfig.getCachedBgImage(signature)
-                if (cached != null) {
-                    onBackgroundDrawableLoaded(cached)
-                    return
-                }
-            }
-            // 未命中缓存且确实配置了背景图：先用最近一次应用的背景图占位，
-            // 避免异步解码期间先显示纯色底再跳变成背景图。
-            // 未配置背景图（signature == null）时不得占位，否则清除背景图后无法回到纯色
-            var placeholderApplied = false
-            if (signature != null) {
-                ThemeConfig.getLastBgImage(signature)?.let {
-                    onBackgroundDrawableLoaded(it)
-                    placeholderApplied = true
-                }
-            }
-            val windowSize = windowManager.windowSize
-            lifecycleScope.launch(Dispatchers.Default) {
-                val drawable = try {
-                    ThemeConfig.getBgImage(this@BaseActivity, windowSize)
-                } catch (_: OutOfMemoryError) {
-                    toastOnUi("背景图片太大,内存溢出")
-                    null
-                } catch (e: Exception) {
-                    AppLog.put("加载背景出错\n${e.localizedMessage}", e)
-                    null
-                }
-                withContext(Dispatchers.Main) {
-                    if (!isFinishing && !isDestroyed) {
-                        if (drawable != null) {
-                            signature?.let { ThemeConfig.cacheBgImage(it, drawable) }
-                            onBackgroundDrawableLoaded(drawable)
-                        } else if (!placeholderApplied) {
-                            // 加载失败且无占位时回调 null（恢复纯色底，清除旧背景图），
-                            // 有占位时保留占位图，避免闪回纯色
-                            onBackgroundDrawableLoaded(null)
-                        }
+            withContext(Dispatchers.Main) {
+                if (!isFinishing && !isDestroyed) {
+                    if (drawable != null) {
+                        ThemeConfig.cacheBgImage(signature, drawable)
+                        onBackgroundDrawableLoaded(drawable)
+                    } else if (!placeholderApplied) {
+                        // 加载失败且无占位时回调 null（恢复纯色底，清除旧背景图），
+                        // 有占位时保留占位图，避免闪回纯色
+                        onBackgroundDrawableLoaded(null)
                     }
                 }
             }

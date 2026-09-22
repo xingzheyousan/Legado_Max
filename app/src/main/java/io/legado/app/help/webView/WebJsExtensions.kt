@@ -11,8 +11,11 @@ import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.model.SharedJsScope
 import io.legado.app.model.analyzeRule.AnalyzeRule.Companion.setCoroutineContext
 import io.legado.app.ui.rss.read.RssJsExtensions
+import io.legado.app.ui.widget.dialog.BottomWebViewDialog
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonObject
+import io.legado.app.utils.showDialogFragment
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.util.UUID
 
@@ -34,6 +37,46 @@ class WebJsExtensions(
     @JavascriptInterface
     fun upConfig(config: String) {
         callbackRef.get()?.upConfig(config)
+    }
+
+    @JavascriptInterface
+    fun showBrowser(url: String) {
+        showBrowser(url, null, null, null)
+    }
+
+    @JavascriptInterface
+    fun showBrowser(url: String, html: String?) {
+        showBrowser(url, html, null, null)
+    }
+
+    @JavascriptInterface
+    fun showBrowser(url: String, html: String?, preloadJs: String?) {
+        showBrowser(url, html, preloadJs, null)
+    }
+
+    /**
+     * 弹出底部 WebView 对话框
+     *
+     * useWeb 内联页面只注入了同步的 java/source/cache（无异步桥），需要异步请求能力时可用本函数，
+     * 对话框内会注入完整 JS 桥，preloadJs 中可直接使用 ajaxAwait 等异步函数。
+     *
+     * JS 接口方法运行在 WebView 的 JavaBridge 线程，必须切回主线程再弹 DialogFragment。
+     */
+    @JavascriptInterface
+    fun showBrowser(url: String, html: String?, preloadJs: String?, config: String?) {
+        val activity = activityRef.get() ?: return
+        val source = getSource() ?: return
+        activity.lifecycleScope.launch {
+            // 页面已销毁或已保存状态时再 show 会抛 IllegalStateException，直接放弃
+            if (activity.isFinishing || activity.isDestroyed
+                || activity.supportFragmentManager.isStateSaved
+            ) {
+                return@launch
+            }
+            activity.showDialogFragment(
+                BottomWebViewDialog(source.getKey(), bookType, url, html, preloadJs, config)
+            )
+        }
     }
 
     /**

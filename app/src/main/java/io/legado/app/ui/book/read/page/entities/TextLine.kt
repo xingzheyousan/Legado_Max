@@ -440,8 +440,10 @@ data class TextLine(
         var currentNpRight = 0.1f
         var currentNpBottom = 0.1f
         var currentBleedMode = HighlightRule.BLEED_SMART
-        var currentSpacingH = 0f
-        var currentSpacingV = 0f
+        var currentSpacingLeft = 0f
+        var currentSpacingRight = 0f
+        var currentSpacingTop = 0f
+        var currentSpacingBottom = 0f
         var active = false
         fun sameStyle(
             bgImage: String,
@@ -452,13 +454,16 @@ data class TextLine(
             npRight: Float,
             npBottom: Float,
             bleedMode: Int,
-            spacingH: Float,
-            spacingV: Float,
+            spacingLeft: Float,
+            spacingRight: Float,
+            spacingTop: Float,
+            spacingBottom: Float,
         ) = bgImage == currentBgImage && bgImageFit == currentBgImageFit &&
             bgImageScale == currentBgImageScale && npLeft == currentNpLeft &&
             npTop == currentNpTop && npRight == currentNpRight && npBottom == currentNpBottom &&
-            bleedMode == currentBleedMode && spacingH == currentSpacingH &&
-            spacingV == currentSpacingV
+            bleedMode == currentBleedMode && spacingLeft == currentSpacingLeft &&
+            spacingRight == currentSpacingRight && spacingTop == currentSpacingTop &&
+            spacingBottom == currentSpacingBottom
         // 段的首尾列下标决定"邻字是谁"，智能策略要靠它判断能否借用邻接空白
         fun flush() = drawBgImageSegment(canvas, rangeStartIndex, rangeEndIndex)
         columns.forEachIndexed { index, column ->
@@ -471,8 +476,10 @@ data class TextLine(
             val npRight = textColumn?.npRight ?: 0.1f
             val npBottom = textColumn?.npBottom ?: 0.1f
             val bleedMode = textColumn?.bgBleedMode ?: HighlightRule.BLEED_SMART
-            val spacingH = textColumn?.bgSpacingH ?: 0f
-            val spacingV = textColumn?.bgSpacingV ?: 0f
+            val spacingLeft = textColumn?.bgSpacingLeft ?: 0f
+            val spacingRight = textColumn?.bgSpacingRight ?: 0f
+            val spacingTop = textColumn?.bgSpacingTop ?: 0f
+            val spacingBottom = textColumn?.bgSpacingBottom ?: 0f
             when {
                 bgImage.isEmpty() && active -> {
                     flush()
@@ -489,13 +496,15 @@ data class TextLine(
                     currentNpRight = npRight
                     currentNpBottom = npBottom
                     currentBleedMode = bleedMode
-                    currentSpacingH = spacingH
-                    currentSpacingV = spacingV
+                    currentSpacingLeft = spacingLeft
+                    currentSpacingRight = spacingRight
+                    currentSpacingTop = spacingTop
+                    currentSpacingBottom = spacingBottom
                     active = true
                 }
                 bgImage.isNotEmpty() && sameStyle(
                     bgImage, bgImageFit, bgImageScale, npLeft, npTop, npRight, npBottom,
-                    bleedMode, spacingH, spacingV,
+                    bleedMode, spacingLeft, spacingRight, spacingTop, spacingBottom,
                 ) -> {
                     rangeEndIndex = index
                 }
@@ -511,8 +520,10 @@ data class TextLine(
                     currentNpRight = npRight
                     currentNpBottom = npBottom
                     currentBleedMode = bleedMode
-                    currentSpacingH = spacingH
-                    currentSpacingV = spacingV
+                    currentSpacingLeft = spacingLeft
+                    currentSpacingRight = spacingRight
+                    currentSpacingTop = spacingTop
+                    currentSpacingBottom = spacingBottom
                 }
             }
             if (active && index == columns.lastIndex) {
@@ -802,8 +813,10 @@ data class TextLine(
                 rightBlankWidth = rightBlankSpace(endIndex, endX),
                 verticalBlankSpace = halfLineGap(),
                 maxBleedX = textSize,
-                spacingH = first.bgSpacingH * textSize,
-                spacingV = first.bgSpacingV * textSize,
+                spacingLeft = first.bgSpacingLeft * textSize,
+                spacingRight = first.bgSpacingRight * textSize,
+                spacingTop = first.bgSpacingTop * textSize,
+                spacingBottom = first.bgSpacingBottom * textSize,
             )
             return
         }
@@ -959,8 +972,9 @@ data class TextLine(
          *   [HighlightRule.BLEED_SMART] 只占用邻接空白（水平借 [leftBlankWidth]/[rightBlankWidth]，
          *   垂直借 [verticalBlankSpace]，即一半行距）；[HighlightRule.BLEED_FORCE] 按四角厚度外扩，
          *   即原来的"向外包裹文字"行为，可能压到相邻未匹配文字。
-         * - [spacingH]/[spacingV] 为手动微调（调用方已换算成像素）：正数把背景向外撑大、离文字更远，
-         *   负数向内收；与自动外扩叠加，所以"严格 + 正间距"也仍是用户主动往外撑。
+         * - [spacingLeft]/[spacingRight]/[spacingTop]/[spacingBottom] 为手动微调（调用方已换算成像素）：
+         *   正数把背景向外撑大、离文字更远，负数向内收；与自动外扩叠加，所以"严格 + 正间距"也仍是
+         *   用户主动往外撑。
          * 目标矩形放不下两侧边框时按比例收缩，避免短匹配 / 大间距时绘制区域失控。
          */
         fun drawNineSlice(
@@ -979,8 +993,10 @@ data class TextLine(
             rightBlankWidth: Float,
             verticalBlankSpace: Float,
             maxBleedX: Float,
-            spacingH: Float,
-            spacingV: Float,
+            spacingLeft: Float,
+            spacingRight: Float,
+            spacingTop: Float,
+            spacingBottom: Float,
         ) {
             val bw = bitmap.width
             val bh = bitmap.height
@@ -1051,10 +1067,10 @@ data class TextLine(
             // 超出部分会画到匹配文字上面，看起来就像背景没包住自己的文字。
             // 强制模式的空隙本来就等于四角自身，这里等价于不夹；严格模式不外扩也不夹，
             // 保持"只覆盖匹配文字"的原有观感。
-            val marginLeft = (bleedLeft + spacingH).coerceAtLeast(0f)
-            val marginRight = (bleedRight + spacingH).coerceAtLeast(0f)
-            val marginTop = (bleedTop + spacingV).coerceAtLeast(0f)
-            val marginBottom = (bleedBottom + spacingV).coerceAtLeast(0f)
+            val marginLeft = (bleedLeft + spacingLeft).coerceAtLeast(0f)
+            val marginRight = (bleedRight + spacingRight).coerceAtLeast(0f)
+            val marginTop = (bleedTop + spacingTop).coerceAtLeast(0f)
+            val marginBottom = (bleedBottom + spacingBottom).coerceAtLeast(0f)
             if (bleedMode != HighlightRule.BLEED_STRICT) {
                 leftW = leftW.coerceAtMost(marginLeft)
                 rightW = rightW.coerceAtMost(marginRight)
@@ -1063,10 +1079,10 @@ data class TextLine(
             }
             // 目标矩形 = 匹配区 + 自动外扩 + 手动间距（正数向外撑、负数向内收）。
             // 强制模式会外扩到邻字上方，排版阶段已把邻字推开（见 TextChapterLayout.computeNeighborPush）
-            val frameLeft = left - bleedLeft - spacingH
-            val frameRight = right + bleedRight + spacingH
-            val frameTop = top - bleedTop - spacingV
-            val frameBottom = bottom + bleedBottom + spacingV
+            val frameLeft = left - bleedLeft - spacingLeft
+            val frameRight = right + bleedRight + spacingRight
+            val frameTop = top - bleedTop - spacingTop
+            val frameBottom = bottom + bleedBottom + spacingBottom
             if (frameRight - frameLeft <= 0f || frameBottom - frameTop <= 0f) return
             val dstX = floatArrayOf(frameLeft, frameLeft + leftW, frameRight - rightW, frameRight)
             val dstY = floatArrayOf(frameTop, frameTop + topH, frameBottom - bottomH, frameBottom)
@@ -1074,6 +1090,10 @@ data class TextLine(
             paint.style = android.graphics.Paint.Style.FILL
             paint.isAntiAlias = true
             paint.isFilterBitmap = true
+            // 切片共享的边界若只是恰好贴合，两侧切片各自做抗锯齿会在拼接处留下半透明的
+            // "切线"，底下的页面背景（尤其背景图片）会从缝里透出来。内部边界各向外扩半个
+            // 像素让相邻切片互相叠压，拼缝处始终被完整覆盖；外框边缘保持原位不动。
+            val seamOverlap = 0.5f
             for (row in 0..2) {
                 for (col in 0..2) {
                     if (srcX[col] == srcX[col + 1] ||
@@ -1086,7 +1106,12 @@ data class TextLine(
                     canvas.drawBitmap(
                         bitmap,
                         android.graphics.Rect(srcX[col], srcY[row], srcX[col + 1], srcY[row + 1]),
-                        android.graphics.RectF(dstX[col], dstY[row], dstX[col + 1], dstY[row + 1]),
+                        android.graphics.RectF(
+                            if (col == 0) dstX[col] else dstX[col] - seamOverlap,
+                            if (row == 0) dstY[row] else dstY[row] - seamOverlap,
+                            if (col == 2) dstX[col + 1] else dstX[col + 1] + seamOverlap,
+                            if (row == 2) dstY[row + 1] else dstY[row + 1] + seamOverlap,
+                        ),
                         paint,
                     )
                 }

@@ -19,9 +19,7 @@ import android.webkit.WebChromeClient.FileChooserParams
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.addCallback
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.core.content.FileProvider
 import androidx.core.view.size
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
@@ -61,12 +59,12 @@ import io.legado.app.help.http.CookieManager as AppCookieManager
 import androidx.core.net.toUri
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.webView.PooledWebView
+import io.legado.app.help.webView.WebFileChooserHelper
 import io.legado.app.help.webView.WebViewPool
 import io.legado.app.help.webView.WebViewPool.BLANK_HTML
 import io.legado.app.help.webView.WebViewPool.DATA_HTML
 import io.legado.app.model.Download
 import splitties.systemservices.powerManager
-import java.io.File
 import java.lang.ref.WeakReference
 import java.net.URLDecoder
 import androidx.core.graphics.createBitmap
@@ -75,10 +73,6 @@ import io.legado.app.help.webView.WebJsExtensions.Companion.nameCache
 import io.legado.app.ui.widget.dialog.CookieViewerDialog
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
-import android.content.Context   
-import android.content.Intent
-import android.app.Activity      
-import androidx.activity.result.contract.ActivityResultContract
 
 
 /**
@@ -104,77 +98,14 @@ class WebViewActivity : VMBaseActivity<ActivityWebViewBinding, WebViewModel>() {
     private var isfullscreen = false
     private var wasScreenOff = false
     private var needClearHistory = true
-    // 文件上传回调，记录网页 <input type="file"> 触发的选择器回调
-    // Android 5.0+ 系统回调类型为 ValueCallback<Uri[]>，泛型擦除会掩盖类型错位，这里必须用数组
-    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    // 网页 <input type="file"> 上传统一处理，与订阅源阅读页共用同一份实现
+    private val fileChooserHelper = WebFileChooserHelper(this)
+
     private val saveImage = registerForActivityResult(HandleFileContract()) {
         it.uri?.let { uri ->
             ACache.get().put(imagePathKey, uri.toString())
             viewModel.saveImage(webPic, uri.toString())
         }
-    }
-
-    // 网页文件上传选择器
-    // 用 ActivityResultContract 自定义：支持 <input multiple> 多选，并通过 EXTRA_MIME_TYPES 传多 accept 类型
-    // （GetContent 只支持单个 mime，多个 join 会用逗号串起来导致选择器空白甚至抛异常）
-    private val uploadFile = registerForActivityResult(object :
-        ActivityResultContract<Array<String>, Array<Uri>?>() {
-        override fun createIntent(context: Context, input: Array<String>): Intent {
-            return Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                addCategory(Intent.CATEGORY_OPENABLE)
-                type = "*/*"
-                if (input.size > 1) {
-                    putExtra(Intent.EXTRA_MIME_TYPES, input)
-                } else {
-                    type = input.firstOrNull() ?: "*/*"
-                }
-                // 允许多选
-                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-            }
-        }
-
-        override fun parseResult(resultCode: Int, intent: Intent?): Array<Uri>? {
-            if (resultCode != Activity.RESULT_OK) return null
-            return intent?.clipData?.let { clip ->
-                Array(clip.itemCount) { clip.getItemAt(it).uri }
-            } ?: intent?.data?.let { arrayOf(it) }
-        }
-    }) { uris ->
-        filePathCallback?.onReceiveValue(uris)
-        filePathCallback = null
-    }
-
-    // 网页 <input capture> 拍照上传：走 TakePicture 拿到图片 Uri，再回填给 filePathCallback
-    private val takePicture = registerForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            // 拍照成功：只回传 Uri，让网页自行读取。此文件不能删！
-            // （若此时删除，网页还没读到文件内容，上传必失败）
-            takePictureUri?.let { filePathCallback?.onReceiveValue(arrayOf(it)) }
-            takePictureUri = null
-            // 回传完成后清掉回调引用，与取消分支对称
-            filePathCallback = null
-        } else {
-            // 用户取消/失败：回填 null 让网页结束等待，临时文件可以删
-            filePathCallback?.onReceiveValue(null)
-            filePathCallback = null
-            deleteCaptureFile()
-        }
-    }
-    private var takePictureUri: Uri? = null
-
-    // 删除拍照临时文件。仅用于取消/失败场景；成功场景的文件交由 onDestroy 兜底清理，
-    // 避免网页还没读完就被删。FileProvider 返回的都是 content://，无需判 file scheme。
-    private fun deleteCaptureFile() {
-        takePictureUri?.let { uri ->
-            try {
-                contentResolver.delete(uri, null, null)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        takePictureUri = null
     }
 
     private fun refresh() {
@@ -498,21 +429,6 @@ class WebViewActivity : VMBaseActivity<ActivityWebViewBinding, WebViewModel>() {
         }
     }
 
-    /**
-     * 为 <input capture> 拍照上传创建图片临时文件，并返回 FileProvider Uri。
-     * 缓存在 cacheDir 下，避免占用外部存储；TakePicture 写入后由 filePathCallback 回传给网页。
-     */
-    private fun createImageUri(): Uri? {
-        return try {
-            val dir = File(cacheDir, "web_capture").apply { mkdirs() }
-            val file = File.createTempFile("capture_", ".jpg", dir)
-            FileProvider.getUriForFile(this, AppConst.authority, file)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
     override fun finish() {
         SourceVerificationHelp.checkResult(viewModel.sourceOrigin)
         super.finish()
@@ -549,17 +465,8 @@ class WebViewActivity : VMBaseActivity<ActivityWebViewBinding, WebViewModel>() {
     }
 
     override fun onDestroy() {
-        // Activity 销毁前必须回填 null 并清掉引用，否则文件选择回调一直挂着导致 WebView 等待/泄漏
-        if (filePathCallback != null) {
-            filePathCallback?.onReceiveValue(null)
-            filePathCallback = null
-        }
-        // 兜底清理拍照临时目录：成功场景的文件在 onDestroy 时统一清除，避免残留
-        try {
-            File(cacheDir, "web_capture").deleteRecursively()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        // 取消挂起的文件选择回调并清理拍照临时目录
+        fileChooserHelper.onDestroy()
         WebViewPool.release(pooledWebView)
         super.onDestroy()
     }
@@ -639,32 +546,7 @@ class WebViewActivity : VMBaseActivity<ActivityWebViewBinding, WebViewModel>() {
             filePathCallback: ValueCallback<Array<Uri>>?,
             fileChooserParams: FileChooserParams?
         ): Boolean {
-            // 回调为 null 时不要拦截，让 WebView 走默认行为
-            val callback = filePathCallback ?: return false
-            // 取消上一次可能未完成的回调，防止页面残留导致泄漏
-            this@WebViewActivity.filePathCallback?.onReceiveValue(null)
-            this@WebViewActivity.filePathCallback = callback
-
-            // 网页声明 <input capture> 时优先走拍照；TakePicture 需要预先给一个可写入的 FileProvider Uri
-            if (fileChooserParams?.isCaptureEnabled == true) {
-                val uri = createImageUri() ?: run {
-                    // 创建失败则回退到文件选择器
-                    uploadFile.launch(arrayOf("image/*"))
-                    return true
-                }
-                takePictureUri = uri
-                takePicture.launch(uri)
-                return true
-            }
-
-            // 解析 accept 类型；多个类型用数组传给 EXTRA_MIME_TYPES，避免 GetContent 逗号拼接的坑
-            val acceptTypes = fileChooserParams?.acceptTypes
-                ?.filter { it.isNotBlank() }
-                ?.toTypedArray()
-                ?.takeIf { it.isNotEmpty() }
-                ?: arrayOf("*/*")
-            uploadFile.launch(acceptTypes)
-            return true
+            return fileChooserHelper.onShowFileChooser(filePathCallback, fileChooserParams)
         }
 
         /* 覆盖window.close() */

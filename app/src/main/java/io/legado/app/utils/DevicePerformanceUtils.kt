@@ -62,6 +62,15 @@ object DevicePerformanceUtils {
             return result
         }
 
+    /**
+     * 是否为低内存设备。
+     *
+     * 供主题切换过渡等「纯装饰性」动效降级使用：这类动效不是功能必需，
+     * 在弱机上不必维持与高端机等长的持续重绘（见 [io.legado.app.lib.theme.ThemeTransition]）。
+     */
+    val isLowRamDevice: Boolean
+        get() = activityManager.isLowRamDevice
+
     private fun evaluateRealtimeGlassSupport(): Boolean {
         // 1. API 级别检查
         if (Build.VERSION.SDK_INT < MIN_API_FOR_REALTIME_GLASS) {

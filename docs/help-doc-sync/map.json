@@ -50,7 +50,7 @@
     },
     {
       "source": "app/src/main/java/io/legado/app/help/config/**",
-      "docs": ["coverConfigHelp.md", "bubbleHelp.md", "highlightRules.md", "replaceRuleHelp.md", "dictRuleHelp.md"]
+      "docs": ["coverConfigHelp.md", "bubbleHelp.md", "highlightRules.md", "replaceRuleHelp.md", "dictRuleHelp.md", "readMenuHelp.md"]
     },
     {
       "source": "app/src/main/java/io/legado/app/help/book/**",

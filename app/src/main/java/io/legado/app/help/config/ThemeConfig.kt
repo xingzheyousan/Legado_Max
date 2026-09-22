@@ -1,6 +1,7 @@
 package io.legado.app.help.config
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Handler
@@ -17,6 +18,7 @@ import io.legado.app.constant.PreferKey
 import io.legado.app.constant.Theme
 import io.legado.app.help.DefaultData
 import io.legado.app.lib.theme.ThemeStore
+import io.legado.app.lib.theme.ThemeTransition
 import io.legado.app.model.BookCover
 import io.legado.app.utils.BitmapUtils
 import io.legado.app.utils.ColorUtils
@@ -65,26 +67,70 @@ object ThemeConfig {
 
     private var needClearImg = true
 
-/** RECREATE 广播防抖窗口：一次应用主题产生的多路重建触发合并为一次通知 */
-    private const val recreateNotifyDelay = 1500L
-
     private val recreateHandler = Handler(Looper.getMainLooper())
 
-    private val notifyRecreateRunnable = Runnable {
+    /** 连续编辑（颜色选择器、滑条等）的重建合并窗口：把一串修改合并成一次重建 */
+    private const val recreateEditDelay = 500L
+
+    /** 已排队广播的延迟，-1 表示当前没有排队，见 [notifyRecreate] */
+    private var recreatePendingDelay = -1L
+
+    private val recreateRunnable = Runnable {
+        recreatePendingDelay = -1L
         postEvent(EventBus.RECREATE, "")
     }
 
     /**
-     * 发送 RECREATE 重建事件（尾沿防抖）。
+     * 请求重建界面（广播 [EventBus.RECREATE]）。
      *
-     * `applyDayNight` 内部 `setDefaultNightMode` 会触发配置变化回调，回调链路里也会申请重建；
-     * 高频直发会形成「重建风暴」（一次点击多次广播 + 多窗口并发重建）。
-     * 这里在静默窗口内合并多路触发，窗口结束后只发一次；期间若出现新的真实操作，窗口顺延，
-     * 保证最后一次操作总是生效（不会被窗口期吞掉）。
+     * @param immediate 一次性动作（日夜切换、跟随系统时系统翻转）传 true：下一次主线程消息即广播，
+     *                  不让用户在切换后干等；连续编辑保持默认 false：尾沿防抖 [recreateEditDelay]，
+     *                  把一串修改合并成一次重建，避免每拖一下颜色/滑条都重建整个页面。
+     *
+     * 历史（勿随手改回固定长窗口）：2026-09-10 的「重建风暴」修复曾让所有请求统一走 1500ms 尾沿防抖，
+     * 结果是**整次日夜切换被推迟 1.5s 才起步**（用户侧就是"切个主题要等好几秒"），
+     * 且在分批送达配置变化的 ROM 上窗口还会被持续顺延。风暴真正的根因是
+     * `App.onConfigurationChanged` 又走一次 `applyDayNight` 的反馈环，它已在同一轮修复里断开；
+     * 剩下的那对重复请求（App 主动切换 + 随后送来的配置变化回声）改由 [consumeNightModeEcho]
+     * 在源头过滤，因此切换路径不再需要靠时间窗来防止重复广播。
      */
-    fun notifyRecreate() {
-        recreateHandler.removeCallbacks(notifyRecreateRunnable)
-        recreateHandler.postDelayed(notifyRecreateRunnable, recreateNotifyDelay)
+    fun notifyRecreate(immediate: Boolean = false) {
+        val delay = if (immediate) 0L else recreateEditDelay
+        // 已排队的广播只会被更早的时刻提前，不会被后来的请求推迟（合并编辑的同时不拖慢切换）
+        if (recreatePendingDelay in 0 until delay) return
+        recreateHandler.removeCallbacks(recreateRunnable)
+        recreatePendingDelay = delay
+        recreateHandler.postDelayed(recreateRunnable, delay)
+    }
+
+    /** 本 App 主动发起的日夜切换目标值（仅在实际会引发配置变化时非空），见 [consumeNightModeEcho] */
+    private var requestedNightMode: Boolean? = null
+
+    /**
+     * 记下「本次日夜切换由 App 主动发起」，供随后的配置变化回调识别自身回声。
+     *
+     * 只在目标日夜状态与当前配置不同（即确实会收到配置变化回调）时才记录：否则会留下一个陈旧标记，
+     * 把后来真正的系统翻转（跟随系统）误判成回声，漏掉那次重建。
+     * 必须在 [initNightMode] 改动配置之前调用。
+     */
+    private fun markNightModeRequested(context: Context) {
+        val configNight =
+            (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                Configuration.UI_MODE_NIGHT_YES
+        requestedNightMode = AppConfig.isNightTheme.takeIf { it != configNight }
+    }
+
+    /**
+     * 消费一次「本 App 主动切换」标记，返回这条配置变化是否为我们自己切换产生的回声。
+     *
+     * 回声对应的重建请求已在 [applyDayNight] 里发过，再发一次就是重复重建窗口（「重建风暴」的构成之一）。
+     * 标记只消费一次，且无论结果如何都会清空：跟随系统时由系统翻转触发的回调、或标记已用掉时
+     * 一律返回 false，调用方仍会正常请求重建——最坏情况只是多一次重建，绝不会漏掉重建。
+     */
+    fun consumeNightModeEcho(night: Boolean): Boolean {
+        val requested = requestedNightMode
+        requestedNightMode = null
+        return requested == night
     }
 
     fun getTheme() = when {
@@ -96,14 +142,22 @@ object ThemeConfig {
     fun isDarkTheme(): Boolean = getTheme() == Theme.Dark
 
     fun applyDayNight(context: Context) {
+        // 过渡起点（上一轮显示的颜色/背景图）只能在主题改动前快照，且必须早于任何表面按新主题落地
+        ThemeTransition.notifyThemeChanged()
         applyTheme(context)
+        // 必须在 initNightMode 之前判断：之后配置就已变成新值，无从区分"会否真的收到配置变化回调"
+        markNightModeRequested(context)
         initNightMode()
         BookCover.upDefaultCover()
-        notifyRecreate()
+        // 日夜切换是一次性动作：立即请求重建，别让用户在切换后干等（旧版 1500ms 尾沿防抖的代价）
+        notifyRecreate(immediate = true)
     }
 
     fun applyDayNightInit(context: Context) {
         applyTheme(context)
+        // 启动时按用户设置设定模式，随后送来的配置变化回调同样是自家回声：
+        // 若不标记，启动瞬间就会请求一次重建（还会被 LiveEventBus 粘住，让刚订阅的主界面白重建一次）
+        markNightModeRequested(context)
         initNightMode()
     }
 

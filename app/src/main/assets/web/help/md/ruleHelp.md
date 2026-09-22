@@ -498,6 +498,12 @@ result = `<img src = "${url}">`;
 </useweb>
 ```
 
+> `useweb` 内联页面只有同步函数（`java.ajax()`、`java.get()` 等），没有 `ajaxAwait` 这类异步桥。\
+> 需要异步请求能力时，用 `java.showBrowser(url, html, preloadJs, config)` 弹出底部 WebView 对话框：\
+> `url` 为加载内容的基础地址，`html` 为要加载的页面内容，`preloadJs`、`config` 可选。\
+> 传入 `preloadJs` 时对话框内会注入完整 JS 桥，可直接使用 `ajaxAwait`、`getAwait`、`run` 等异步函数；\
+> 不传 `preloadJs` 时对话框内只有与内联页面相同的同步函数。
+
 - 发现页 useweb
 
 > `发现地址规则（url）` 可以填写一段 `<js>...</js>`，最后返回包含 `<useweb>...</useweb>` 的字符串。\

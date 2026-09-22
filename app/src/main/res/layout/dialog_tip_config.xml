@@ -129,6 +129,9 @@
                 android:id="@+id/tv_header_left"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:maxWidth="200dp"
                 android:padding="6dp"
                 android:textColor="@color/primaryText"
                 tools:text="@string/title" />
@@ -155,6 +158,9 @@
                 android:id="@+id/tv_header_middle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:maxWidth="200dp"
                 android:padding="6dp"
                 android:textColor="@color/primaryText"
                 tools:text="@string/title" />
@@ -181,6 +187,9 @@
                 android:id="@+id/tv_header_right"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:maxWidth="200dp"
                 android:padding="6dp"
                 android:textColor="@color/primaryText"
                 tools:text="@string/title" />
@@ -248,6 +257,9 @@
                 android:id="@+id/tv_footer_left"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:maxWidth="200dp"
                 android:padding="6dp"
                 android:textColor="@color/primaryText"
                 tools:text="@string/title" />
@@ -274,6 +286,9 @@
                 android:id="@+id/tv_footer_middle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:maxWidth="200dp"
                 android:padding="6dp"
                 android:textColor="@color/primaryText"
                 tools:text="@string/title" />
@@ -300,6 +315,9 @@
                 android:id="@+id/tv_footer_right"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:maxWidth="200dp"
                 android:padding="6dp"
                 android:textColor="@color/primaryText"
                 tools:text="@string/title" />

@@ -68,6 +68,51 @@ object ReadTipConfig {
             ReadBookConfig.config.tipFooterRight = value
         }
 
+    /**
+     * 各位置的信息模板，为空表示尚未自定义，按 [effectiveTemplate] 回退到旧枚举规则。
+     */
+    var tipHeaderLeftTemplate: String?
+        get() = ReadBookConfig.config.tipHeaderLeftTemplate
+        set(value) {
+            ReadBookConfig.config.tipHeaderLeftTemplate = value
+        }
+
+    var tipHeaderMiddleTemplate: String?
+        get() = ReadBookConfig.config.tipHeaderMiddleTemplate
+        set(value) {
+            ReadBookConfig.config.tipHeaderMiddleTemplate = value
+        }
+
+    var tipHeaderRightTemplate: String?
+        get() = ReadBookConfig.config.tipHeaderRightTemplate
+        set(value) {
+            ReadBookConfig.config.tipHeaderRightTemplate = value
+        }
+
+    var tipFooterLeftTemplate: String?
+        get() = ReadBookConfig.config.tipFooterLeftTemplate
+        set(value) {
+            ReadBookConfig.config.tipFooterLeftTemplate = value
+        }
+
+    var tipFooterMiddleTemplate: String?
+        get() = ReadBookConfig.config.tipFooterMiddleTemplate
+        set(value) {
+            ReadBookConfig.config.tipFooterMiddleTemplate = value
+        }
+
+    var tipFooterRightTemplate: String?
+        get() = ReadBookConfig.config.tipFooterRightTemplate
+        set(value) {
+            ReadBookConfig.config.tipFooterRightTemplate = value
+        }
+
+    /**
+     * 取实际生效的模板：自定义过就用模板，否则把旧枚举规则转成等价模板。
+     */
+    fun effectiveTemplate(template: String?, legacyTip: Int): String =
+        template ?: ReaderInfoTemplate.fromLegacy(legacyTip)
+
     var headerMode: Int
         get() = ReadBookConfig.config.headerMode
         set(value) {

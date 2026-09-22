@@ -129,6 +129,14 @@ class TextChapterLayout(
     /** 九宫格"强制"策略需要从列末尾扣掉的宽度（见 [computeNeighborPush]），按段落排版时写入 */
     private var columnTrimEnd: FloatArray? = null
 
+    /**
+     * 九宫格"强制"策略在**段首带缩进**时给缩进额外让出的宽度（见 [computeNeighborPush]）。
+     *
+     * 两端对齐时首行缩进是用固定宽度的占位列重建的（见 [addCharsToLineFirst]），读不到宽度数组里
+     * 那份加宽，所以单独带一份过来补在最后一个缩进列上。
+     */
+    private var columnIndentExtra: Float = 0f
+
     private val visibleHeight = ChapterProvider.visibleHeight
     private val visibleWidth = ChapterProvider.visibleWidth
 
@@ -969,6 +977,7 @@ class TextChapterLayout(
             textPaint,
         ) { index -> textPaint.measureText(spanned, index, index + 1) }
         columnTrimEnd = neighborPush?.trimEnd
+        columnIndentExtra = neighborPush?.indentAdd ?: 0f
         neighborPush?.let { push ->
             for (i in push.widthAdd.indices) {
                 if (push.widthAdd[i] > 0f) {
@@ -1046,8 +1055,10 @@ class TextChapterLayout(
                 val npRight = highlightStyle?.npRight ?: 0.1f
                 val npBottom = highlightStyle?.npBottom ?: 0.1f
                 val bgBleedMode = highlightStyle?.bgBleedMode ?: HighlightRule.BLEED_SMART
-                val bgSpacingH = highlightStyle?.bgSpacingH ?: 0f
-                val bgSpacingV = highlightStyle?.bgSpacingV ?: 0f
+                val bgSpacingLeft = highlightStyle?.bgSpacingLeft ?: 0f
+                val bgSpacingRight = highlightStyle?.bgSpacingRight ?: 0f
+                val bgSpacingTop = highlightStyle?.bgSpacingTop ?: 0f
+                val bgSpacingBottom = highlightStyle?.bgSpacingBottom ?: 0f
                 val highlightFontPath = extractFontPath(spanned, charIndex)
                 val charRight = if (charIndex + 1 < lineEnd) {
                     staticLayout.getPrimaryHorizontal(charIndex + 1)
@@ -1189,8 +1200,10 @@ class TextChapterLayout(
                                 npRight = npRight,
                                 npBottom = npBottom,
                                 bgBleedMode = bgBleedMode,
-                                bgSpacingH = bgSpacingH,
-                                bgSpacingV = bgSpacingV,
+                                bgSpacingLeft = bgSpacingLeft,
+                                bgSpacingRight = bgSpacingRight,
+                                bgSpacingTop = bgSpacingTop,
+                                bgSpacingBottom = bgSpacingBottom,
                                 fontPath = highlightFontPath,
                             ),
                         )
@@ -1218,8 +1231,10 @@ class TextChapterLayout(
                             npRight = npRight,
                             npBottom = npBottom,
                             bgBleedMode = bgBleedMode,
-                            bgSpacingH = bgSpacingH,
-                            bgSpacingV = bgSpacingV,
+                            bgSpacingLeft = bgSpacingLeft,
+                            bgSpacingRight = bgSpacingRight,
+                            bgSpacingTop = bgSpacingTop,
+                            bgSpacingBottom = bgSpacingBottom,
                             fontPath = highlightFontPath,
                         ),
                     )
@@ -1444,8 +1459,10 @@ class TextChapterLayout(
         var npRight = 0.1f
         var npBottom = 0.1f
         var bgBleedMode = HighlightRule.BLEED_SMART
-        var bgSpacingH = 0f
-        var bgSpacingV = 0f
+        var bgSpacingLeft = 0f
+        var bgSpacingRight = 0f
+        var bgSpacingTop = 0f
+        var bgSpacingBottom = 0f
         var hasUnderline = false
         var hasBgImage = false
         var hasBgColor = false
@@ -1467,8 +1484,10 @@ class TextChapterLayout(
                 npRight = span.npRight
                 npBottom = span.npBottom
                 bgBleedMode = span.bgBleedMode
-                bgSpacingH = span.bgSpacingH
-                bgSpacingV = span.bgSpacingV
+                bgSpacingLeft = span.bgSpacingLeft
+                bgSpacingRight = span.bgSpacingRight
+                bgSpacingTop = span.bgSpacingTop
+                bgSpacingBottom = span.bgSpacingBottom
                 hasBgImage = true
             }
             if (span.bgColor != null) {
@@ -1492,8 +1511,10 @@ class TextChapterLayout(
             npRight = if (hasBgImage) npRight else 0.1f,
             npBottom = if (hasBgImage) npBottom else 0.1f,
             bgBleedMode = bgBleedMode,
-            bgSpacingH = bgSpacingH,
-            bgSpacingV = bgSpacingV,
+            bgSpacingLeft = bgSpacingLeft,
+            bgSpacingRight = bgSpacingRight,
+            bgSpacingTop = bgSpacingTop,
+            bgSpacingBottom = bgSpacingBottom,
         )
     }
 
@@ -1658,12 +1679,29 @@ class TextChapterLayout(
         }
         // 九宫格"强制"策略：把左右邻字向外推开一个正文字距。加宽写进 widthsArray 参与断行与两端
         // 对齐，列末尾再按 trimEnd 扣回来，保证背景本身不被撑宽（见 computeNeighborPush）
+        // 标题左对齐（且没有被"居中"分支接管）时行首就是正文列左边界，行首匹配要靠整行右移让出背景
+        val titleStartAligned = isTitle && !isMiddleTitle && !isRightTitle &&
+            !emptyContent && !isVolumeTitle &&
+            imageStyle?.uppercase() != Book.imgStyleSingle
+        // 标题右对齐时行末（最后一行/单行）就是正文列右边界，行末匹配要靠整行左移让出背景
+        val titleEndAligned = isTitle && isRightTitle &&
+            !emptyContent && !isVolumeTitle &&
+            imageStyle?.uppercase() != Book.imgStyleSingle
+        // 正文段首无缩进时行首同样是正文列左边界，行首匹配也要整行右移让出背景（段首带缩进时走
+        // computeNeighborPush 的缩进右移路径；被图片分割出的续段首行没有缩进、同样适用）；
+        // 正文段末匹配落在末行，末行是左对齐的、没有可整体左移的余量，改为按需压缩行宽
+        val indentLength = paragraphIndentLength(text, isTitle)
+        val bodyStartAligned = !isTitle && indentLength == 0
         val neighborPush = computeNeighborPush(
             text,
             collectForcedBleedSegments(charStyles),
             textPaint,
+            indentLength,
+            titleStartAligned || bodyStartAligned,
+            titleEndAligned || !isTitle,
         ) { index -> widthsArray.getOrElse(index) { 0f } }
         columnTrimEnd = neighborPush?.trimEnd
+        columnIndentExtra = neighborPush?.indentAdd ?: 0f
         neighborPush?.let { push ->
             for (i in push.widthAdd.indices) {
                 if (push.widthAdd[i] != 0f) widthsArray[i] += push.widthAdd[i]
@@ -1728,12 +1766,36 @@ class TextChapterLayout(
             val (words, widths) = measureTextSplit(lineText, widthsArray, lineStart)
             val desiredWidth = widths.fastSum()
             textLine.text = lineText
+            // 行首匹配让出的外扩量加在整行起始偏移上（标题首行；正文无缩进的段首同理，
+            // 只有首行会被行首匹配影响）
+            val lineStartExtra = if (lineIndex == 0) {
+                neighborPush?.lineStartAdd ?: 0f
+            } else {
+                0f
+            }
+            // 标题右对齐时段末匹配让出的外扩量从整行起始偏移里扣掉（只有最后一行/单行会被段末匹配影响）
+            val titleEndExtra = if (isTitle && lineIndex == layout.lineCount - 1) {
+                neighborPush?.lineEndSub ?: 0f
+            } else {
+                0f
+            }
+            // 正文段末匹配的外扩量：末行右端空白不够时按两端对齐的方式压缩行宽让出（标题右对齐
+            // 用"整行左移"，正文末行左对齐、没有可左移的余量）；空白足够则无需处理
+            val endBleed = if (!isTitle && lineIndex == layout.lineCount - 1) {
+                neighborPush?.lineEndSub ?: 0f
+            } else {
+                0f
+            }
+            // 行尾要压回 visibleWidth - endBleed 才放得下背景右缘；末行右侧空白不足时才需要压缩
+            val endSqueezeNeeded = endBleed > 0f &&
+                (visibleWidth - lineStartExtra - desiredWidth) < endBleed
             when (lineIndex) {
                 0 if layout.lineCount > 1 && !isTitle && isFirstLine -> {
                     // 多行的第一行 非标题
                     addCharsToLineFirst(
                         book, absStartX, textLine, words, textPaint,
                         desiredWidth, widths, srcList, clickList, charStyles, lineStart,
+                        lineStartExtra,
                     )
                 }
                 layout.lineCount - 1 -> {
@@ -1747,16 +1809,30 @@ class TextChapterLayout(
                                 imageStyle?.uppercase() == Book.imgStyleSingle -> {
                                 (visibleWidth - desiredWidth) / 2
                             }
-                            isRightTitle -> visibleWidth - desiredWidth
-                            else -> 0f
+                            // 右对齐：扣掉段末匹配让出的外扩量，背景右侧边缘正好落在正文列右边界；
+                            // 行满时扣成负数会把左侧文字挤进页边距，改为保住文字、外扩量部分溢出
+                            isRightTitle -> (visibleWidth - desiredWidth - titleEndExtra).coerceAtLeast(0f)
+                            else -> lineStartExtra
                         }
                     } else {
-                        0f
+                        // 单行正文段落同样可能吃到行首匹配的整行右移
+                        if (lineIndex == 0) lineStartExtra else 0f
                     }
-                    addCharsToLineNatural(
-                        book, absStartX, textLine, words,
-                        startX, !isTitle && lineIndex == 0, widths, srcList, clickList, charStyles, lineStart,
-                    )
+                    if (!isTitle && textFullJustify && endSqueezeNeeded) {
+                        // 末行右端放不下段末外扩：走两端对齐的压缩分布。addCharsToLineMiddle 的
+                        // 行尾基准是 visibleWidth，desiredWidth 补上全部外扩量后 residual 恒为负、
+                        // 行尾正好落在 visibleWidth - endBleed，背景右缘贴住正文列右边界
+                        addCharsToLineMiddle(
+                            book, absStartX, textLine, words, textPaint,
+                            desiredWidth + startX + endBleed, startX,
+                            widths, srcList, clickList, charStyles, lineStart,
+                        )
+                    } else {
+                        addCharsToLineNatural(
+                            book, absStartX, textLine, words,
+                            startX, !isTitle && lineIndex == 0, widths, srcList, clickList, charStyles, lineStart,
+                        )
+                    }
                 }
                 else -> {
                     if (isTitle) {
@@ -1769,17 +1845,19 @@ class TextChapterLayout(
                                 (visibleWidth - desiredWidth) / 2
                             }
                             isRightTitle -> visibleWidth - desiredWidth
-                            else -> 0f
+                            else -> lineStartExtra
                         }
                         addCharsToLineNatural(
                             book, absStartX, textLine, words,
                             startX, false, widths, srcList, clickList, charStyles, lineStart,
                         )
                     } else {
-                        // 中间行
+                        // 中间行；续段（被图片分割出的残段）首行没有缩进、同样可能吃到行首匹配的
+                        // 整行右移，desiredWidth 同步补上右移量让行尾仍落在正文列右边界
                         addCharsToLineMiddle(
                             book, absStartX, textLine, words, textPaint,
-                            desiredWidth, 0f, widths, srcList, clickList, charStyles, lineStart,
+                            desiredWidth + lineStartExtra, lineStartExtra,
+                            widths, srcList, clickList, charStyles, lineStart,
                         )
                     }
                 }
@@ -1838,8 +1916,10 @@ class TextChapterLayout(
         clickList: LinkedList<String?>?,
         charStyles: Array<CharStyle?>?,
         lineStart: Int,
+        /** 行首匹配让出的外扩量：整行右移让出背景（与标题左对齐同理，正文仅无缩进的段首会出现） **/
+        startExtra: Float = 0f,
     ) {
-        var x = 0f
+        var x = startExtra
         if (!textFullJustify) {
             addCharsToLineNatural(
                 book, absStartX, textLine, words,
@@ -1848,8 +1928,11 @@ class TextChapterLayout(
             return
         }
         val bodyIndent = paragraphIndent
-        repeat(bodyIndent.length) {
-            val x1 = x + indentCharWidth
+        val indentExtra = columnIndentExtra
+        repeat(bodyIndent.length) { index ->
+            // 段首有"强制"外扩时，最后一个缩进列要多让出外扩量，缩进后的文字随之整体右移
+            val x1 = x + indentCharWidth +
+                if (index == bodyIndent.lastIndex) indentExtra else 0f
             textLine.addColumn(
                 TextColumn(
                     charData = ChapterProvider.indentChar,
@@ -1866,7 +1949,9 @@ class TextChapterLayout(
             val textWidths1 = textWidths.subList(bodyIndent.length, textWidths.size)
             addCharsToLineMiddle(
                 book, absStartX, textLine, text1, textPaint,
-                desiredWidth, x, textWidths1, srcList, clickList, charStyles, lineStart + bodyIndent.length,
+                // 整行右移让出背景后，两端对齐的终点要扣回同样的量，行尾仍落在正文列右边界
+                //（有缩进时 startExtra 恒为 0，缩进路径不受影响）
+                desiredWidth + startExtra, x, textWidths1, srcList, clickList, charStyles, lineStart + bodyIndent.length,
             )
         }
     }
@@ -2017,8 +2102,10 @@ class TextChapterLayout(
         val npRight = style?.npRight ?: 0.1f
         val npBottom = style?.npBottom ?: 0.1f
         val bgBleedMode = style?.bgBleedMode ?: HighlightRule.BLEED_SMART
-        val bgSpacingH = style?.bgSpacingH ?: 0f
-        val bgSpacingV = style?.bgSpacingV ?: 0f
+        val bgSpacingLeft = style?.bgSpacingLeft ?: 0f
+        val bgSpacingRight = style?.bgSpacingRight ?: 0f
+        val bgSpacingTop = style?.bgSpacingTop ?: 0f
+        val bgSpacingBottom = style?.bgSpacingBottom ?: 0f
         val fontPath = style?.font.orEmpty()
         val column = when {
             !srcList.isNullOrEmpty() && (char == srcReplaceStr || char == reviewStr) -> {
@@ -2066,8 +2153,10 @@ class TextChapterLayout(
                     npRight = npRight,
                     npBottom = npBottom,
                     bgBleedMode = bgBleedMode,
-                    bgSpacingH = bgSpacingH,
-                    bgSpacingV = bgSpacingV,
+                    bgSpacingLeft = bgSpacingLeft,
+                    bgSpacingRight = bgSpacingRight,
+                    bgSpacingTop = bgSpacingTop,
+                    bgSpacingBottom = bgSpacingBottom,
                     fontPath = fontPath,
                 )
             }
@@ -2147,14 +2236,34 @@ class TextChapterLayout(
      * [trimEnd] 记录加在"匹配区最后一个字"上的那份，建列时要从列末尾扣掉——否则背景会跟着
      * 一起变宽，等于没把邻字推开。
      */
-    private class NeighborPush(val widthAdd: FloatArray, val trimEnd: FloatArray)
+    private class NeighborPush(val widthAdd: FloatArray, val trimEnd: FloatArray) {
+
+        /**
+         * 段首缩进额外让出的宽度：加在**最后一个缩进字**上，缩进后的文字整体右移。
+         * 两端对齐的缩进列是按固定宽度重建的，读不到 [widthAdd]，所以额外带一份。
+         */
+        var indentAdd: Float = 0f
+
+        /**
+         * 行首额外右移量：匹配从**本行第一列**开始（行首没有邻字可推）时，把外扩量加到
+         * 整行的起始偏移上，背景的左侧边缘就落在文字起始位置（见 [computeNeighborPush]）。
+         */
+        var lineStartAdd: Float = 0f
+
+        /**
+         * 行末额外左移量：匹配到**本行最后一列**（行末没有邻字可推）时，把外扩量从整行的
+         * 起始偏移里扣掉，背景的右侧边缘就落在文字结束位置（见 [computeNeighborPush]）。
+         */
+        var lineEndSub: Float = 0f
+    }
 
     /** 参与"邻字外推"计算的一段九宫格强制高亮（只保留与背景图外扩相关的字段） */
     private class BleedSegment(
         val start: Int,
         val end: Int,
         val bgImage: String,
-        val spacingH: Float,
+        val spacingLeft: Float,
+        val spacingRight: Float,
         val npLeft: Float,
         val npRight: Float,
     )
@@ -2165,8 +2274,8 @@ class TextChapterLayout(
 
     private fun CharStyle?.sameBleedAs(other: CharStyle): Boolean =
         this != null && bgImage == other.bgImage && bgImageFit == other.bgImageFit &&
-            bgBleedMode == other.bgBleedMode && bgSpacingH == other.bgSpacingH &&
-            npLeft == other.npLeft && npRight == other.npRight
+            bgBleedMode == other.bgBleedMode && npLeft == other.npLeft && npRight == other.npRight &&
+            bgSpacingLeft == other.bgSpacingLeft && bgSpacingRight == other.bgSpacingRight
 
     private fun HighlightStyleSpan.isForcedBleed(): Boolean =
         bgImage.isNotEmpty() && bgImageFit == bgImageFitNine &&
@@ -2186,7 +2295,10 @@ class TextChapterLayout(
             var end = index + 1
             while (end < charStyles.size && charStyles[end].sameBleedAs(style)) end++
             segments.add(
-                BleedSegment(index, end, style.bgImage, style.bgSpacingH, style.npLeft, style.npRight),
+                BleedSegment(
+                    index, end, style.bgImage,
+                    style.bgSpacingLeft, style.bgSpacingRight, style.npLeft, style.npRight,
+                ),
             )
             index = end
         }
@@ -2202,11 +2314,24 @@ class TextChapterLayout(
             val end = spanned.getSpanEnd(span)
             if (start < end) {
                 segments.add(
-                    BleedSegment(start, end, span.bgImage, span.bgSpacingH, span.npLeft, span.npRight),
+                    BleedSegment(
+                        start, end, span.bgImage,
+                        span.bgSpacingLeft, span.bgSpacingRight, span.npLeft, span.npRight,
+                    ),
                 )
             }
         }
         return segments
+    }
+
+    /**
+     * 段落首行的缩进长度；没有缩进（标题、用户把缩进设为 0、非段落开头）时返回 0。
+     */
+    private fun paragraphIndentLength(text: CharSequence, isTitle: Boolean): Int {
+        if (isTitle) return 0
+        val indent = paragraphIndent
+        if (indent.isEmpty() || text.length <= indent.length) return 0
+        return if (text.startsWith(indent)) indent.length else 0
     }
 
     /**
@@ -2216,12 +2341,33 @@ class TextChapterLayout(
      * 于是邻字要向外让出的量 = 外扩量 + 正文字距 − 邻字与匹配区之间本来已有的空隙。
      * 加宽加在邻字自己的推进量上，因此断行与两端对齐都会按真实宽度处理，剩下的文字仍然整齐。
      *
-     * 单侧最多让出 1em，避免极端分割比例把整行挤爆。
+     * 让出的距离由**背景元素自身**决定（四角厚度 + 间距），不再固定为一个字宽：间距调大时邻字会被
+     * 推得更远，背景始终完整地包住匹配文字。
+     *
+     * 段首缩进是例外：此时左邻字就是段落自己的缩进。缩进是段落必需的排版空间，不能按"邻字已有空隙"
+     * 抵扣（抵扣后背景的左侧边缘会压进缩进里，这一段看上去缩进比别的段落小）。改为**按外扩量把缩进
+     * 后的文字整体右移**：缩进的让出量写进 [NeighborPush.indentAdd]，背景边缘正好落在缩进后的文字
+     * 起始位置，且与匹配文字的距离保持不变。
+     *
+     * 另一种"行首没有邻字"的情况同理：匹配从本行第一列开始（标题左对齐时最常见，行首右边就是正文列
+     * 左边界），左侧没有列可以加宽。此时若该行确实顶着正文列左边界（[lineStartAligned]），把外扩量
+     * 记进 [NeighborPush.lineStartAdd]，由调用方加到整行的起始偏移上——背景左侧边缘落在文字起始位置，
+     * 不会溢出到页边距里被裁掉。居中的行不需要（外扩量落在行首外的空白里，视觉上本来就是完整的）。
+     *
+     * 行末是镜像情况：匹配到本行最后一列（标题右对齐时最常见，行末左边就是正文列右边界），右侧没有
+     * 列可以加宽。此时若该行确实顶着正文列右边界（[lineEndAligned]），把外扩量记进
+     * [NeighborPush.lineEndSub]，由调用方从整行的起始偏移里扣掉——背景右侧边缘落在文字结束位置。
      */
     private fun computeNeighborPush(
         text: CharSequence,
         segments: List<BleedSegment>,
         textPaint: TextPaint,
+        /** 段落首行的缩进长度（0 = 无缩进），左邻字落在缩进里时改用"整段右移" */
+        indentLength: Int = 0,
+        /** 该行文字是否紧贴正文列左边界（行首匹配时要把整行右移，见 [NeighborPush.lineStartAdd]） */
+        lineStartAligned: Boolean = false,
+        /** 该行文字是否紧贴正文列右边界（行末匹配时要把整行左移，见 [NeighborPush.lineEndSub]） */
+        lineEndAligned: Boolean = false,
         advance: (Int) -> Float,
     ): NeighborPush? {
         if (segments.isEmpty()) return null
@@ -2248,25 +2394,54 @@ class TextChapterLayout(
             val sides = TextLine.nineSliceSideWidth(
                 bitmap, segment.npLeft, segment.npRight, textSize,
             )
-            val spacing = segment.spacingH * textSize
+            val spacingLeft = segment.spacingLeft * textSize
+            val spacingRight = segment.spacingRight * textSize
             // 左侧：把匹配区连同背景一起往右挪，邻字不动
             if (segment.start > 0) {
                 val index = segment.start - 1
-                val size = (sides[0] + spacing + bodySpacing - bearing(index, true))
-                    .coerceIn(0f, textSize)
-                if (size > 0f) {
-                    push.widthAdd[index] = maxOf(push.widthAdd[index], size)
+                if (indentLength > 0 && index < indentLength) {
+                    // 段首缩进：外扩量加在最后一个缩进字上，缩进后的文字整体右移，背景的左侧边缘
+                    // 就落在缩进后的文字起始位置（与匹配文字的距离 = 外扩量，保持不变）
+                    val extra = (sides[0] + spacingLeft).coerceAtLeast(0f)
+                    if (extra > 0f) {
+                        val target = indentLength - 1
+                        push.widthAdd[target] = maxOf(push.widthAdd[target], extra)
+                        push.indentAdd = maxOf(push.indentAdd, extra)
+                        applied = true
+                    }
+                } else {
+                    val size = (sides[0] + spacingLeft + bodySpacing - bearing(index, true))
+                        .coerceAtLeast(0f)
+                    if (size > 0f) {
+                        push.widthAdd[index] = maxOf(push.widthAdd[index], size)
+                        applied = true
+                    }
+                }
+            } else if (lineStartAligned) {
+                // 匹配从本行第一列开始（标题左对齐）：左侧没有列可以加宽，外扩量交给整行起始偏移，
+                // 背景的左侧边缘就落在文字起始位置（与匹配文字的距离 = 外扩量，保持不变）
+                val extra = (sides[0] + spacingLeft).coerceAtLeast(0f)
+                if (extra > 0f) {
+                    push.lineStartAdd = maxOf(push.lineStartAdd, extra)
                     applied = true
                 }
             }
             // 右侧：加在匹配区最后一个字上（它后面的字才会被推开），因此记下要扣回背景的量
             if (segment.end < text.length) {
                 val index = segment.end - 1
-                val size = (sides[1] + spacing + bodySpacing - bearing(segment.end, false))
-                    .coerceIn(0f, textSize)
+                val size = (sides[1] + spacingRight + bodySpacing - bearing(segment.end, false))
+                    .coerceAtLeast(0f)
                 if (size > 0f) {
                     push.widthAdd[index] = maxOf(push.widthAdd[index], size)
                     push.trimEnd[index] = maxOf(push.trimEnd[index], size)
+                    applied = true
+                }
+            } else if (lineEndAligned) {
+                // 匹配到本行最后一列（标题右对齐最常见）：右侧没有列可以加宽，外扩量从整行起始
+                // 偏移里扣掉，背景的右侧边缘就落在文字结束位置（与匹配文字的距离 = 外扩量，保持不变）
+                val extra = (sides[1] + spacingRight).coerceAtLeast(0f)
+                if (extra > 0f) {
+                    push.lineEndSub = maxOf(push.lineEndSub, extra)
                     applied = true
                 }
             }
@@ -2329,8 +2504,10 @@ class TextChapterLayout(
                 npRight = style.npRight,
                 npBottom = style.npBottom,
                 bgBleedMode = style.bgBleedMode,
-                bgSpacingH = style.bgSpacingH,
-                bgSpacingV = style.bgSpacingV,
+                bgSpacingLeft = style.bgSpacingLeft,
+                bgSpacingRight = style.bgSpacingRight,
+                bgSpacingTop = style.bgSpacingTop,
+                bgSpacingBottom = style.bgSpacingBottom,
                 font = style.font,
             )
         }

@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
@@ -48,6 +49,7 @@ import io.legado.app.help.config.ThemeConfig
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.help.storage.Backup
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.theme.ThemeTransition
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.bottomBackground
@@ -144,6 +146,12 @@ class MainActivity :
     /** 背景是否至少应用过一次（区分“尚未初始化”与“签名匹配跳过”） */
     private var backgroundImageApplied = false
 
+    /** 主界面背景已消费的主题切换代数，见 [ThemeTransition.generation]（重建后实例重置） */
+    private var contentTransitionGeneration = -1
+
+    /** 底栏已消费的主题切换代数，见 [ThemeTransition.generation] */
+    private var bottomBarTransitionGeneration = -1
+
     private fun bookshelfPosition(): Int = realPositions.indexOf(idBookshelf)
 
     private fun fragmentIdToMenuItemId(fragmentId: Int): Int = when (fragmentId) {
@@ -191,8 +199,9 @@ class MainActivity :
             return
         }
         backgroundImageSignature = signature
-        // 注意：背景解码是异步的，super 返回时背景尚未生效，
-        // content_container 的同步统一在 onBackgroundDrawableLoaded 回调中完成
+        // 注意：配置了背景图时解码是异步的，super 返回时背景尚未生效，
+        // content_container 的同步统一在 onBackgroundDrawableLoaded 回调中完成；
+        // 未配置背景图（纯色底）时 super 同步回调，使其与底栏在同一帧进入过渡
         super.upBackgroundImage()
     }
 
@@ -204,9 +213,48 @@ class MainActivity :
         // 注意：此处会无条件覆盖 content_container 背景，详见上方约束说明
         // 无背景图时回退主题纯色底：LiquidGlass 只能采到 content_container 自身
         // 的绘制内容，背景置 null 会使采样源透明，玻璃/磨砂效果随之失效
-        binding.contentContainer.background = drawable?.constantState?.newDrawable()?.mutate()
+        val target = drawable?.constantState?.newDrawable()?.mutate()
             ?: backgroundColor.toDrawable()
+        binding.contentContainer.background = themeContentBackground(target)
         backgroundImageApplied = true
+    }
+
+    /**
+     * 主界面背景（content_container）的落地。
+     *
+     * 日/夜切换时与底栏共用 [ThemeTransition] 的时长与表现做交叉淡化：两者的数据来源与刷新时机
+     * 本不相同（底栏色值读自 ThemeStore 同步可得，背景可能来自异步解码回调），若各自硬切换，
+     * 底栏瞬变、背景随后才变，观感上就是割裂。
+     *
+     * 起点层按上一轮的实际形态取：上一轮是纯色就重建 ColorDrawable，是背景图就
+     * 从进程级缓存取那张图（[ThemeConfig.getCachedBgImage] 返回共享像素的副本，
+     * 不会多占一张整屏位图；且动画结束即换成终点 Drawable，不长期持有旧图）。
+     * 两者都取不到时保持原有的直接切换。
+     */
+    private fun themeContentBackground(target: Drawable): Drawable {
+        val signature = currentBackgroundSignature()
+        val toColor = (target as? ColorDrawable)?.color
+        ThemeTransition.rememberContentBackground(signature, toColor)
+        val overlay = binding.contentContainer
+        val enteredNewGeneration = contentTransitionGeneration != ThemeTransition.generation
+        contentTransitionGeneration = ThemeTransition.generation
+        if (!enteredNewGeneration) {
+            // 同一轮过渡内再次落地（配置了背景图时会先落地占位图、再落地解码结果）：
+            // 只换终点层，让过渡从占位图接着走到新背景，而不是被这次落地打断
+            if (ThemeTransition.updateCrossFadeTarget(overlay, target)) {
+                return overlay.background ?: target
+            }
+            return target
+        }
+        val startSignature = ThemeTransition.contentTransitionStartSignature
+        val startColor = ThemeTransition.contentTransitionStartColor
+        val unchanged = startSignature == signature &&
+            (signature != null || startColor == toColor)
+        if (unchanged) return target
+        val from = startSignature?.let { ThemeConfig.getCachedBgImage(it) }
+            ?: startColor?.toDrawable()
+            ?: return target
+        return ThemeTransition.crossFade(overlay, from, target)
     }
 
     /**
@@ -819,10 +867,7 @@ class MainActivity :
             val glassView = bottomNavigationGlassView
             if (!glassView.isReleased()) return@run
             val config = NavigationBarConfig.activeConfig(this@MainActivity, AppConfig.isNightTheme)
-            val needsGlass = config.layoutMode != NavigationBarConfig.LAYOUT_STANDARD &&
-                config.effectMode != NavigationBarConfig.EFFECT_SOLID &&
-                DevicePerformanceUtils.supportsRealtimeGlass
-            if (!needsGlass) return@run
+            if (!usesRealtimeGlassShell(config)) return@run
             glassView.visible()
             val bgColor = resolveNavigationBarBackground(config)
             val cornerRadius = if (config.layoutMode == NavigationBarConfig.LAYOUT_FLOATING) 24f.dpToPx() else 0f
@@ -933,7 +978,6 @@ class MainActivity :
         // 低不透明度时背景近乎透明，深色阴影直接投射在页面内容上对比度反而更高，
         // 所以必须控制阴影本身的 alpha，而非仅缩放 elevation 值。
         val opacityFactor = config.opacity.coerceIn(0, 100) / 100f
-        val fullyTransparent = opacityFactor <= 0f
         val baseElevation = when (config.effectMode) {
             NavigationBarConfig.EFFECT_SOLID -> 8.dpToPx().toFloat()
             NavigationBarConfig.EFFECT_FROSTED -> 14.dpToPx().toFloat()
@@ -961,10 +1005,7 @@ class MainActivity :
         }
         bottomNavigationView.setBackgroundColor(Color.TRANSPARENT)
         bottomNavigationView.background = Color.TRANSPARENT.toDrawable()
-        // 判断是否使用实时玻璃效果：用户配置为玻璃/磨砂 且 非标准布局 且 设备支持实时模糊
-        val wantsLiquid = !standard && config.effectMode != NavigationBarConfig.EFFECT_SOLID
-        val canRealtimeGlass = DevicePerformanceUtils.supportsRealtimeGlass
-        val liquid = wantsLiquid && canRealtimeGlass
+        val liquid = usesRealtimeGlassShell(config)
         applyBottomNavigationGlassOutline(bottomNavigationGlass, if (floating) 24f.dpToPx() else 0f)
         if (liquid) {
             // 玻璃/磨砂效果：保留液态玻璃视图，即使不透明度为 0 也能反映页面滑动的折射/模糊效果
@@ -972,17 +1013,7 @@ class MainActivity :
             setupBottomLiquidGlass(bottomNavigationGlassView, config, if (floating) 24f.dpToPx() else 0f, bgColor)
             // 不透明度为 0 时 shell overlay 设为透明，避免静态底色/描边残留（如 strokeAlpha 基底 0.22）；
             // 液态玻璃视图本身的折射/模糊效果不受影响，仍能反映页面滑动
-            bottomNavigationShellOverlay.background = if (fullyTransparent) {
-                Color.TRANSPARENT.toDrawable()
-            } else {
-                createLiquidGlassShellDrawable(
-                    glassLevel = config.opacity.coerceIn(0, 100) / 100f,
-                    cornerRadius = if (floating) 24f.dpToPx() else 0f,
-                    effectMode = config.effectMode,
-                    bgColor = bgColor,
-                    strokeColor = resolveBottomNavigationBorderColor(config),
-                )
-            }
+            bottomNavigationShellOverlay.background = themeBottomBarBackground(config, floating, bgColor)
         } else {
             // 非实时玻璃（实色效果或低性能设备降级）：释放采样视图以停止持续采样
             if (!bottomNavigationGlassView.isReleased()) {
@@ -991,11 +1022,84 @@ class MainActivity :
             bottomNavigationGlassView.invisible()
             // 不透明度为 0 时无静态背景，确保完全透明；
             // 否则用静态玻璃材质 Drawable 替代实时模糊（低性能设备降级）
-            bottomNavigationShellOverlay.background = if (fullyTransparent) {
-                Color.TRANSPARENT.toDrawable()
-            } else {
-                createBottomNavigationShellDrawable(config, bgColor)
+            bottomNavigationShellOverlay.background = themeBottomBarBackground(config, floating, bgColor)
+        }
+    }
+
+    /**
+     * 底栏背景的落地。
+     *
+     * 与主界面背景封装成同一套过渡：日/夜切换时用 [ThemeTransition.bottomBarTransitionStartColor]
+     * （切换前记录的旧颜色）重建「旧外观」作为起始层，与新外观在同一时长内交叉淡化，
+     * 避免底栏瞬变而背景滞后一拍。
+     *
+     * 非主题切换（如拖动不透明度/圆角等配置）走代数判断直接落地，避免高频过渡互相打断。
+     */
+    private fun themeBottomBarBackground(
+        config: NavigationBarConfig,
+        floating: Boolean,
+        bgColor: Int,
+    ): Drawable {
+        val target = buildBottomBarShellDrawable(config, floating, bgColor)
+        val fromColor = ThemeTransition.bottomBarTransitionStartColor
+        ThemeTransition.rememberBottomBarColor(bgColor)
+        val enteredNewGeneration = bottomBarTransitionGeneration != ThemeTransition.generation
+        bottomBarTransitionGeneration = ThemeTransition.generation
+        if (!enteredNewGeneration) {
+            // 同一轮过渡内再次落地（首个 insets 回调会让底栏内边距由 0 变为真实值，从而整包重建一次）：
+            // 只把进行中的交叉淡化换上新的终点层，否则刚起步的过渡会被这次落地当场打断
+            val overlay = binding.bottomNavigationShellOverlay
+            if (ThemeTransition.updateCrossFadeTarget(overlay, target)) {
+                // 返回当前的包装 Drawable；赋值同一实例不会重启动画
+                return overlay.background ?: target
             }
+            return target
+        }
+        if (fromColor == null || fromColor == bgColor) {
+            return target
+        }
+        return ThemeTransition.crossFade(
+            binding.bottomNavigationShellOverlay,
+            buildBottomBarShellDrawable(config, floating, fromColor),
+            target,
+        )
+    }
+
+    /**
+     * 判断是否使用实时液态玻璃：用户配置为玻璃/磨砂 且 非标准布局 且 设备支持实时模糊。
+     *
+     * 判定被「整包应用」与「构建 Shell 背景」共用，收敛成一处，避免两条路径的条件漂移
+     * 导致同一配置下算出的外观不一致。
+     */
+    private fun usesRealtimeGlassShell(config: NavigationBarConfig): Boolean =
+        config.layoutMode != NavigationBarConfig.LAYOUT_STANDARD &&
+            config.effectMode != NavigationBarConfig.EFFECT_SOLID &&
+            DevicePerformanceUtils.supportsRealtimeGlass
+
+    /**
+     * 构建底栏 Shell 背景 Drawable，与 [applyBottomNavigationShell] 的落地分支一一对应。
+     * 独立成方法是因为过渡需要用「上一轮颜色」重建旧外观作为交叉淡化的起始层。
+     */
+    private fun buildBottomBarShellDrawable(
+        config: NavigationBarConfig,
+        floating: Boolean,
+        bgColor: Int,
+    ): Drawable {
+        val opacityFactor = config.opacity.coerceIn(0, 100) / 100f
+        if (opacityFactor <= 0f) {
+            // 完全透明时无静态背景，避免静态底色/描边残留（如 strokeAlpha 基底 0.22）
+            return Color.TRANSPARENT.toDrawable()
+        }
+        return if (usesRealtimeGlassShell(config)) {
+            createLiquidGlassShellDrawable(
+                glassLevel = opacityFactor,
+                cornerRadius = if (floating) 24f.dpToPx() else 0f,
+                effectMode = config.effectMode,
+                bgColor = bgColor,
+                strokeColor = resolveBottomNavigationBorderColor(config),
+            )
+        } else {
+            createBottomNavigationShellDrawable(config, bgColor)
         }
     }
 

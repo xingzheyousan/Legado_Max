@@ -122,10 +122,20 @@ class BatteryView @JvmOverloads constructor(
         arrowIconView.alpha = 0.76f
     }
 
-    fun setTextIfNotEqual(newText: String?) {
-        if (text?.toString() != newText) {
+    /**
+     * 内容相同则不重设，避免重复 setText 造成的闪烁；支持模板渲染出的富文本。
+     */
+    fun setTextIfNotEqual(newText: CharSequence?) {
+        if (text?.toString() != newText?.toString()) {
             text = newText
         }
+    }
+
+    /**
+     * 清空当前内容。文字没变但外部样式（颜色等）变了时，靠它让下一次渲染必定重新设置。
+     */
+    fun clearText() {
+        text = null
     }
 
     fun setBattery(battery: Int, text: String? = null) {

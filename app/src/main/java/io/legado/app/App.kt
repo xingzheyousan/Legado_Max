@@ -45,6 +45,7 @@ import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.config.ThemeConfig.applyDayNightInit
 import io.legado.app.help.config.ThemeConfig.applyTheme
+import io.legado.app.help.config.ThemeConfig.consumeNightModeEcho
 import io.legado.app.help.config.ThemeConfig.notifyRecreate
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.help.http.Cronet
@@ -54,6 +55,7 @@ import io.legado.app.help.rhino.NativeBaseSource
 import io.legado.app.help.source.SourceHelp
 import io.legado.app.help.source.SourceRecycleBinHelp
 import io.legado.app.help.storage.Backup
+import io.legado.app.lib.theme.ThemeTransition
 import io.legado.app.model.BookCover
 import io.legado.app.utils.ChineseUtils
 import io.legado.app.utils.LogUtils
@@ -149,10 +151,25 @@ class App : Application() {
         super.onConfigurationChanged(newConfig)
         val diff = newConfig.diff(oldConfig)
         if ((diff and ActivityInfo.CONFIG_UI_MODE) != 0) {
+            val oldNight = oldConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK
+            val newNight = newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK
+            // App 自己发起的日夜切换（applyDayNight）随后也会把配置变化送来这里，这条回调是它的回声：
+            // 那次的重建请求与过渡标记都已在 applyDayNight 里发过，再发一次就是重复重建窗口
+            // （「重建风暴」的构成之一）。必须无条件消费标记，否则陈旧标记会把后来的系统翻转误判成回声。
+            val echo = consumeNightModeEcho(newNight == Configuration.UI_MODE_NIGHT_YES)
+            // 昼夜位真的翻转（且不是自己的回声）时标记一次主题过渡，供主界面在重建后把背景与底栏
+            // 放进同一条动画时间轴。用昼夜位而非 diff 判定是关键：过渡起点要在主题改动前快照，
+            // 拿不到旧颜色的回调不能再覆盖它。
+            if (oldNight != newNight && !echo) {
+                ThemeTransition.notifyThemeChanged()
+            }
             // 模式此时已生效，不能再次 setDefaultNightMode/applyDayNight，
             // 否则会再次触发配置变化，形成「RECREATE 广播风暴」（见 docs/archive/主题列表应用主题后UI卡死根因分析）
             applyTheme(this)
-            notifyRecreate()
+            if (!echo) {
+                // 系统翻转（跟随系统）同样是一次性动作，与手动切换一样立即重建
+                notifyRecreate(immediate = true)
+            }
         }
         oldConfig = Configuration(newConfig)
     }

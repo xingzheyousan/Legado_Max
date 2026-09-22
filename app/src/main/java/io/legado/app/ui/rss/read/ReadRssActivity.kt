@@ -29,6 +29,8 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient.FileChooserParams
 import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.core.view.WindowInsetsCompat
@@ -42,6 +44,7 @@ import io.legado.app.constant.AppConst.imagePathKey
 import io.legado.app.constant.AppLog
 import io.legado.app.databinding.ActivityRssReadBinding
 import io.legado.app.help.WebCacheManager
+import io.legado.app.help.webView.WebFileChooserHelper
 import io.legado.app.help.webView.WebJsExtensions
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.http.CookieManager
@@ -136,6 +139,10 @@ class ReadRssActivity :
             viewModel.saveImage(it.value, uri)
         }
     }
+
+    // 网页 <input type="file"> 上传统一处理，与内置浏览器 WebViewActivity 共用同一份实现
+    // 单 URL 订阅源（singleUrl）是直接把网页加载进本页 WebView，同样需要支持上传
+    private val fileChooserHelper = WebFileChooserHelper(this)
     private val rssJsExtensions by lazy { RssJsExtensions(this, viewModel.rssSource) }
 
     private val refreshNameList: MutableList<String> by lazy { mutableListOf() }
@@ -698,6 +705,8 @@ class ReadRssActivity :
     }
 
     override fun onDestroy() {
+        // 取消挂起的文件选择回调并清理拍照临时目录
+        fileChooserHelper.onDestroy()
         WebViewPool.release(pooledWebView)
         super.onDestroy()
     }
@@ -763,6 +772,15 @@ class ReadRssActivity :
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             keepScreenOn(false)
             toggleSystemBar(true)
+        }
+
+        /* 处理网页 <input type="file"> 文件上传 */
+        override fun onShowFileChooser(
+            webView: WebView?,
+            filePathCallback: ValueCallback<Array<Uri>>?,
+            fileChooserParams: FileChooserParams?,
+        ): Boolean {
+            return fileChooserHelper.onShowFileChooser(filePathCallback, fileChooserParams)
         }
 
         /* 覆盖window.close() */
